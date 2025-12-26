@@ -1,0 +1,1011 @@
+/* Media Library Pro - Styles supplémentaires pour les classes Tailwind non compilées par Filament */
+
+/* Ces styles complètent les classes Filament pré-compilées (fi-*) */
+
+/* Utilitaires de base */
+.space-y-6 > * + * {
+    margin-top: 1.5rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+/* Grid */
+.grid {
+    display: grid;
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+    .md\:grid-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .lg\:grid-cols-6 {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+/* Flexbox */
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+/* Spacing */
+.p-2 {
+    padding: 0.5rem;
+}
+
+.p-3 {
+    padding: 0.75rem;
+}
+
+.px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+.mt-1 {
+    margin-top: 0.25rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+/* Typography */
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Colors - Light mode */
+.text-gray-500 {
+    color: rgb(107 114 128);
+}
+
+.text-gray-600 {
+    color: rgb(75 85 99);
+}
+
+.text-gray-700 {
+    color: rgb(55 65 81);
+}
+
+.text-gray-900 {
+    color: rgb(17 24 39);
+}
+
+.text-gray-400 {
+    color: rgb(156 163 175);
+}
+
+.bg-gray-100 {
+    background-color: rgb(243 244 246);
+}
+
+.bg-gray-800 {
+    background-color: rgb(31 41 55);
+}
+
+.bg-white {
+    background-color: rgb(255 255 255);
+}
+
+.bg-yellow-100 {
+    background-color: rgb(254 249 195);
+}
+
+/* Colors - Dark mode */
+.dark\:text-gray-300 {
+    color: rgb(209 213 219);
+}
+
+.dark\:text-gray-400 {
+    color: rgb(156 163 175);
+}
+
+.dark\:text-white {
+    color: rgb(255 255 255);
+}
+
+.dark\:bg-gray-800 {
+    background-color: rgb(31 41 55);
+}
+
+.dark\:bg-gray-900 {
+    background-color: rgb(17 24 39);
+}
+
+.dark\:bg-yellow-900\/20 {
+    background-color: rgb(113 63 18 / 0.2);
+}
+
+.dark\:border-gray-700 {
+    border-color: rgb(55 65 81);
+}
+
+.dark\:ring-white\/10 {
+    --tw-ring-color: rgb(255 255 255 / 0.1);
+}
+
+/* Borders */
+.border {
+    border-width: 1px;
+}
+
+.border-t {
+    border-top-width: 1px;
+}
+
+.border-gray-200 {
+    border-color: rgb(229 231 235);
+}
+
+.rounded {
+    border-radius: 0.25rem;
+}
+
+.rounded-xl {
+    border-radius: 0.75rem;
+}
+
+.rounded-lg {
+    border-radius: 0.5rem;
+}
+
+/* Shadows */
+.shadow-sm {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+/* Ring */
+.ring-1 {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.ring-gray-950\/5 {
+    --tw-ring-color: rgb(3 7 18 / 0.05);
+}
+
+.ring-inset {
+    --tw-ring-inset: inset;
+}
+
+/* Aspect ratio */
+.aspect-square {
+    aspect-ratio: 1 / 1;
+}
+
+/* Overflow */
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.overflow-x-auto {
+    overflow-x: auto;
+}
+
+/* Position */
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.top-2 {
+    top: 0.5rem;
+}
+
+.left-2 {
+    left: 0.5rem;
+}
+
+.z-10 {
+    z-index: 10;
+}
+
+/* Sizing */
+.w-full {
+    width: 100%;
+}
+
+.h-full {
+    height: 100%;
+}
+
+.w-4 {
+    width: 1rem;
+}
+
+.h-4 {
+    height: 1rem;
+}
+
+.w-12 {
+    width: 3rem;
+}
+
+.h-12 {
+    height: 3rem;
+}
+
+.w-16 {
+    width: 4rem;
+}
+
+.h-16 {
+    height: 4rem;
+}
+
+/* Object fit */
+.object-cover {
+    object-fit: cover;
+}
+
+/* Cursor */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Transitions */
+.transition-opacity {
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.hover\:opacity-90:hover {
+    opacity: 0.9;
+}
+
+/* Loading */
+.loading-lazy {
+    loading: lazy;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+    .sm\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .sm\:px-6 {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    .sm\:text-sm {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+}
+
+/* Modal styles */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Absolute positioning */
+.absolute {
+    position: absolute;
+}
+
+.right-0 {
+    right: 0;
+}
+
+.top-0 {
+    top: 0;
+}
+
+.pr-4 {
+    padding-right: 1rem;
+}
+
+.pt-4 {
+    padding-top: 1rem;
+}
+
+/* Button styles for modal close */
+.rounded-md {
+    border-radius: 0.375rem;
+}
+
+.text-gray-400 {
+    color: rgb(156 163 175);
+}
+
+.hover\:text-gray-500:hover {
+    color: rgb(107 114 128);
+}
+
+.focus\:outline-none:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.focus\:ring-2:focus {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.focus\:ring-primary-500:focus {
+    --tw-ring-color: rgb(245 158 11);
+}
+
+.focus\:ring-offset-2:focus {
+    --tw-ring-offset-width: 2px;
+}
+
+.dark\:focus\:ring-offset-gray-800:focus {
+    --tw-ring-offset-color: rgb(31 41 55);
+}
+
+.h-6 {
+    height: 1.5rem;
+}
+
+.w-6 {
+    width: 1.5rem;
+}
+
+.h-5 {
+    height: 1.25rem;
+}
+
+.w-5 {
+    width: 1.25rem;
+}
+
+/* Modal close button improvements */
+.inline-flex {
+    display: inline-flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.p-2 {
+    padding: 0.5rem;
+}
+
+.hover\:bg-gray-100:hover {
+    background-color: rgb(243 244 246);
+}
+
+.dark\:hover\:bg-gray-700:hover {
+    background-color: rgb(55 65 81);
+}
+
+.transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.z-10 {
+    z-index: 10;
+}
+
+/* Modal backdrop and container */
+.fixed {
+    position: fixed;
+}
+
+.inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
+.bg-gray-500 {
+    background-color: rgb(107 114 128);
+}
+
+.bg-opacity-75 {
+    background-color: rgba(107, 114, 128, 0.75) !important;
+}
+
+.flex {
+    display: flex;
+}
+
+.min-h-full {
+    min-height: 100%;
+}
+
+.items-end {
+    align-items: flex-end;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+@media (min-width: 640px) {
+    .sm\:items-center {
+        align-items: center;
+    }
+    
+    .sm\:p-0 {
+        padding: 0;
+    }
+}
+
+.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.rounded-lg {
+    border-radius: 0.5rem;
+}
+
+.px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.pb-4 {
+    padding-bottom: 1rem;
+}
+
+.pt-5 {
+    padding-top: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .sm\:my-8 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .sm\:w-full {
+        width: 100%;
+    }
+    
+    .sm\:max-w-lg {
+        max-width: 32rem;
+    }
+    
+    .sm\:p-6 {
+        padding: 1.5rem;
+    }
+}
+
+/* Modal header improvements */
+.border-b {
+    border-bottom-width: 1px;
+}
+
+.border-gray-200 {
+    border-color: rgb(229 231 235);
+}
+
+.dark\:border-gray-700 {
+    border-color: rgb(55 65 81);
+}
+
+.text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.pb-4 {
+    padding-bottom: 1rem;
+}
+
+/* File input styling */
+.file\:mr-4::file-selector-button {
+    margin-right: 1rem;
+}
+
+.file\:py-2::file-selector-button {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.file\:px-4::file-selector-button {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.file\:rounded-lg::file-selector-button {
+    border-radius: 0.5rem;
+}
+
+.file\:border-0::file-selector-button {
+    border-width: 0;
+}
+
+.file\:text-sm::file-selector-button {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.file\:font-semibold::file-selector-button {
+    font-weight: 600;
+}
+
+.file\:bg-primary-50::file-selector-button {
+    background-color: rgb(255 247 237);
+}
+
+.file\:text-primary-700::file-selector-button {
+    color: rgb(180 83 9);
+}
+
+.hover\:file\:bg-primary-100:hover::file-selector-button {
+    background-color: rgb(254 243 199);
+}
+
+.dark\:file\:bg-primary-900::file-selector-button {
+    background-color: rgb(120 53 15);
+}
+
+.dark\:file\:text-primary-200::file-selector-button {
+    color: rgb(253 230 138);
+}
+
+.bg-gray-50 {
+    background-color: rgb(249 250 251);
+}
+
+.dark\:bg-gray-900 {
+    background-color: rgb(17 24 39);
+}
+
+.p-3 {
+    padding: 0.75rem;
+}
+
+.px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* Media Picker Modal specific styles */
+.max-h-\[70vh\] {
+    max-height: 70vh;
+}
+
+.max-h-96 {
+    max-height: 24rem;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+}
+
+.align-bottom {
+    vertical-align: bottom;
+}
+
+.sm\:align-middle {
+    vertical-align: middle;
+}
+
+.sm\:max-w-6xl {
+    max-width: 72rem;
+}
+
+.transform {
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.inline-block {
+    display: inline-block;
+}
+
+.text-left {
+    text-align: left;
+}
+
+/* Alpine.js transitions */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Filament component styles */
+.fi-input {
+    display: block;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(209 213 219);
+    background-color: rgb(255 255 255);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(17 24 39);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.fi-input:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border-color: rgb(245 158 11);
+    box-shadow: 0 0 0 3px rgb(245 158 11 / 0.1);
+}
+
+.dark .fi-input {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+    color: rgb(255 255 255);
+}
+
+.dark .fi-input:focus {
+    border-color: rgb(245 158 11);
+    box-shadow: 0 0 0 3px rgb(245 158 11 / 0.1);
+}
+
+.fi-input-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(55 65 81);
+    margin-bottom: 0.25rem;
+}
+
+.dark .fi-input-label {
+    color: rgb(209 213 219);
+}
+
+/* Button styles */
+.fi-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.fi-btn-color-gray {
+    background-color: rgb(249 250 251);
+    color: rgb(55 65 81);
+    border-color: rgb(209 213 219);
+}
+
+.fi-btn-color-gray:hover {
+    background-color: rgb(243 244 246);
+}
+
+.fi-btn-size-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.fi-btn-style-outline {
+    background-color: transparent;
+    border: 1px solid rgb(209 213 219);
+    color: rgb(55 65 81);
+}
+
+.fi-btn-style-outline:hover {
+    background-color: rgb(249 250 251);
+}
+
+.dark .fi-btn-color-gray {
+    background-color: rgb(31 41 55);
+    color: rgb(209 213 219);
+    border-color: rgb(55 65 81);
+}
+
+.dark .fi-btn-color-gray:hover {
+    background-color: rgb(55 65 81);
+}
+
+.dark .fi-btn-style-outline {
+    background-color: transparent;
+    border-color: rgb(55 65 81);
+    color: rgb(209 213 219);
+}
+
+.dark .fi-btn-style-outline:hover {
+    background-color: rgb(31 41 55);
+}
+
+/* Ring utilities */
+.ring-1 {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.ring-inset {
+    --tw-ring-inset: inset;
+}
+
+.ring-gray-950\/10 {
+    --tw-ring-color: rgb(3 7 18 / 0.1);
+}
+
+.ring-white\/20 {
+    --tw-ring-color: rgb(255 255 255 / 0.2);
+}
+
+/* Additional spacing */
+.pb-20 {
+    padding-bottom: 5rem;
+}
+
+.sm\:block {
+    display: block;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Ensure modal content is properly styled */
+.rounded-lg {
+    border-radius: 0.5rem;
+}
+
+.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Section styles for filters */
+.fi-section {
+    background-color: rgb(255 255 255);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgb(229 231 235);
+}
+.dark .fi-section {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+}
+
+/* Additional utilities for modal */
+.z-50 {
+    z-index: 50;
+}
+
+.text-gray-700 {
+    color: rgb(55 65 81);
+}
+
+.dark .text-gray-300 {
+    color: rgb(209 213 219);
+}
+
+.dark .text-gray-100 {
+    color: rgb(243 244 246);
+}
+
+.text-gray-900 {
+    color: rgb(17 24 39);
+}
+
+.dark .text-gray-900 {
+    color: rgb(243 244 246);
+}
+
+.bg-white {
+    background-color: rgb(255 255 255);
+}
+
+.dark .bg-gray-800 {
+    background-color: rgb(31 41 55);
+}
+
+.border-gray-200 {
+    border-color: rgb(229 231 235);
+}
+
+.dark .border-gray-700 {
+    border-color: rgb(55 65 81);
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.h-full {
+    height: 100%;
+}
+
+/* Modal backdrop and background fixes */
+.fixed.inset-0[style*='background-color'] {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+}
+
+/* Dark mode for modal background */
+@media (prefers-color-scheme: dark) {
+    .dark [style*='background-color: rgb(255, 255, 255)'] {
+        background-color: rgb(31, 41, 55) !important;
+    }
+}
+
+.dark [style*='background-color: rgb(255, 255, 255)'] {
+    background-color: rgb(31, 41, 55) !important;
+}
+
+/* Ensure proper z-index stacking */
+[style*='z-index: 2'] {
+    z-index: 2 !important;
+}
+
+[style*='z-index: 1'] {
+    z-index: 1 !important;
+}
+
+/* Modal background fixes */
+.modal-content-bg {
+    background-color: rgb(255, 255, 255);
+}
+
+.dark .modal-content-bg {
+    background-color: rgb(31, 41, 55);
+}
+
+/* Ensure backdrop is properly styled */
+.fixed.inset-0[style*='background-color'] {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 1 !important;
+}
+
+/* Modal content z-index */
+[style*='z-index: 2'] {
+    z-index: 2 !important;
+    position: relative;
+}
+
+[style*='z-index: 1'] {
+    z-index: 1 !important;
+    position: relative;
+}
