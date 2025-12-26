@@ -6,7 +6,7 @@ use Closure;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Concerns\HasPlaceholder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Xavier\MediaLibraryPro\Models\MediaFile;
 
 class MediaPicker extends Field
 {
@@ -98,7 +98,7 @@ class MediaPicker extends Field
     {
         $acceptedTypes = $this->getAcceptedFileTypes();
         
-        $query = Media::query();
+        $query = MediaFile::query();
 
         if (!empty($acceptedTypes)) {
             $query->where(function ($q) use ($acceptedTypes) {
@@ -114,7 +114,7 @@ class MediaPicker extends Field
         }
 
         return $query->limit(100)->get()->mapWithKeys(function ($media) {
-            return [$media->id => $media->name];
+            return [$media->id => $media->file_name];
         })->toArray();
     }
 }

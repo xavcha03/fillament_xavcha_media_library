@@ -119,7 +119,7 @@
                     class="fi-input block w-full rounded-lg border-none bg-white px-3 py-2 text-base text-gray-950 shadow-sm ring-1 ring-inset ring-gray-950/10 outline-none transition duration-75 focus:ring-2 focus:ring-primary-500 dark:bg-white/5 dark:text-white dark:ring-white/20 dark:focus:ring-primary-500"
                 >
                     <option value="">Toutes les collections</option>
-                    @foreach(\Spatie\MediaLibrary\MediaCollections\Models\Media::distinct()->pluck('collection_name') as $collection)
+                    @foreach(\Xavier\MediaLibraryPro\Models\MediaAttachment::distinct()->pluck('collection_name')->filter() as $collection)
                         <option value="{{ $collection }}">{{ $collection }}</option>
                     @endforeach
                 </select>
