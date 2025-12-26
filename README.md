@@ -1,6 +1,6 @@
 # Media Library Pro
 
-[![Laravel](https://img.shields.io/badge/Laravel-10.x%2B-red.svg)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-12.x%2B-red.svg)](https://laravel.com)
 [![Filament](https://img.shields.io/badge/Filament-4.x-blue.svg)](https://filamentphp.com)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://php.net)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -43,8 +43,8 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 
 ### Prérequis
 
-- PHP 8.1 ou supérieur
-- Laravel 10.x ou supérieur
+- PHP 8.2 ou supérieur
+- Laravel 12.x ou supérieur
 - Filament 4.x (pour l'interface admin)
 - Extension GD ou Intervention Image (pour les conversions)
 
