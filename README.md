@@ -38,6 +38,8 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - [Sécurité](#-sécurité)
 - [Dépannage](#-dépannage)
 - [🎨 Guide de Styling](#-guide-de-styling) - **Important pour le développement**
+- [📚 Documentation](#-documentation)
+- [📋 Roadmap / TODO](#-roadmap--todo)
 - [Contribution](#-contribution)
 
 ## 🚀 Installation
@@ -1048,6 +1050,48 @@ Si vous modifiez les vues Blade ou ajoutez de nouvelles classes Tailwind, vous d
 - ✅ Définir toutes les classes manuellement dans le CSS
 - ✅ Inclure les variantes dark mode, responsive, hover, focus
 - ✅ Échapper correctement les classes avec caractères spéciaux (`bg-black/70` → `.bg-black\/70`)
+
+## 📚 Documentation
+
+Ce package inclut une documentation complète organisée dans plusieurs fichiers :
+
+### 📖 Documents principaux
+
+- **[README.md](README.md)** (ce fichier) - Vue d'ensemble et guide principal
+- **[INSTALLATION.md](INSTALLATION.md)** - Guide d'installation détaillé étape par étape
+- **[STYLING.md](STYLING.md)** - Guide complet pour le styling et les classes Tailwind
+- **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions et changements
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide pour contribuer au projet
+- **[TODO.md](TODO.md)** - Liste des fonctionnalités à venir et améliorations prévues
+
+### 🧪 Tests
+
+- **[tests/README.md](tests/README.md)** - Documentation sur les tests et comment les exécuter
+
+### 📝 Structure de la documentation
+
+```
+packages/xavcha/fillament-xavcha-media-library/
+├── README.md              # Documentation principale
+├── INSTALLATION.md        # Guide d'installation
+├── STYLING.md             # Guide de styling Tailwind
+├── CHANGELOG.md           # Historique des versions
+├── CONTRIBUTING.md        # Guide de contribution
+├── TODO.md                # Roadmap et fonctionnalités à venir
+└── tests/
+    └── README.md          # Documentation des tests
+```
+
+### 🔍 Navigation rapide
+
+- **Débutant ?** → Commencez par [INSTALLATION.md](INSTALLATION.md)
+- **Problème de style ?** → Consultez [STYLING.md](STYLING.md)
+- **Voulez contribuer ?** → Lisez [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Nouvelles fonctionnalités ?** → Voir [TODO.md](TODO.md)
+
+## 📋 Roadmap / TODO
+
+Voir [TODO.md](TODO.md) pour la liste complète des fonctionnalités prévues et améliorations à venir.
 
 ## 📝 Changelog
 

@@ -406,6 +406,18 @@ class MediaLibrary extends Component
         $this->showDetailModal = false;
     }
 
+    /**
+     * Get the media image URL for display
+     */
+    public function getMediaImageUrl(MediaFile $media): string
+    {
+        try {
+            return route('media-library-pro.serve', ['media' => $media->uuid]);
+        } catch (\Exception $e) {
+            return url('/media-library-pro/serve/' . $media->uuid);
+        }
+    }
+
     public function render()
     {
         return view('media-library-pro::livewire.media-library', [

@@ -1,11 +1,4 @@
 <div class="space-y-6">
-    {{-- Debug: Afficher le nombre de médias --}}
-    @if(config('app.debug') && isset($media))
-        <div class="bg-yellow-100 dark:bg-yellow-900/20 p-2 rounded text-xs">
-            Debug: {{ $media->total() }} média(s) trouvé(s) | Page {{ $media->currentPage() }}/{{ $media->lastPage() }}
-        </div>
-    @endif
-    
     {{-- Toolbar --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -204,9 +197,6 @@
                                         $imageUrl = url('/media-library-pro/serve/' . $item->uuid);
                                     }
                                 @endphp
-                                @if(config('app.debug'))
-                                    <!-- Debug: ID={{ $item->id }} | UUID={{ $item->uuid }} | Disk={{ $item->disk }} | Path={{ $item->path }} | URL={{ $imageUrl }} -->
-                                @endif
                                 <img
                                     src="{{ $imageUrl }}"
                                     alt="{{ $item->file_name }}"
@@ -691,32 +681,28 @@
 
     {{-- Detail Modal --}}
     <div
-            x-data="{ 
-                show: @entangle('showDetailModal').live,
-                handleKeydown(event) {
-                    if (event.key === 'Escape' && this.show) {
-                        $wire.closeDetailModal();
-                    }
-                    if (event.key === 'Enter' && event.ctrlKey && this.show) {
-                        event.preventDefault();
-                        $wire.updateMediaDetails();
-                    }
+        x-data="{ 
+            show: @entangle('showDetailModal').live,
+            handleKeydown(event) {
+                if (event.key === 'Escape' && this.show) {
+                    $wire.closeDetailModal();
                 }
-            }"
-            x-show="show"
-            x-cloak
-            x-transition
-            class="fixed inset-0 z-50 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="media-detail-title"
-            @keydown.window="handleKeydown"
-            x-init="
-                $watch('show', value => {
-                    document.body.style.overflow = value ? 'hidden' : '';
-                });
-            "
-        >
+                if (event.key === 'Enter' && event.ctrlKey && this.show) {
+                    event.preventDefault();
+                    $wire.updateMediaDetails();
+                }
+            }
+        }"
+        x-show="show"
+        x-cloak
+        x-transition
+        class="fixed inset-0 z-50 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="media-detail-title"
+        @keydown.window="handleKeydown"
+        x-init="$watch('show', value => { document.body.style.overflow = value ? 'hidden' : ''; })"
+    >
             {{-- Backdrop --}}
             <div
                 x-show="show"
@@ -743,7 +729,7 @@
                     x-transition:leave-start="opacity-100 scale-100"
                     x-transition:leave-end="opacity-0 scale-[0.97]"
                     class="relative mx-auto transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 transition-all pointer-events-auto focus:outline-none"
-                    style="max-width: 72rem; width: calc(100% - 3rem); max-height: 90vh; overflow-y: auto;"
+                    style="max-width: 72rem; width: calc(100% - 3rem); max-height: 90vh;"
                     @click.stop
                     tabindex="-1"
                 >
@@ -779,19 +765,12 @@
                         {{-- Content --}}
                         <div class="px-6 py-6 space-y-6 bg-white dark:bg-gray-800 overflow-y-auto" style="max-height: calc(90vh - 200px);">
                             <div class="grid grid-cols-2 gap-6">
-                                {{-- Preview --}}
+                                {{-- Colonne gauche : Preview et Informations --}}
                                 <div class="space-y-4">
                                     <div class="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                                         @if($detailMedia->isImage())
-                                            @php
-                                                try {
-                                                    $imageUrl = route('media-library-pro.serve', ['media' => $detailMedia->uuid]);
-                                                } catch (\Exception $e) {
-                                                    $imageUrl = url('/media-library-pro/serve/' . $detailMedia->uuid);
-                                                }
-                                            @endphp
                                             <img
-                                                src="{{ $imageUrl }}"
+                                                src="{{ $this->getMediaImageUrl($detailMedia) }}"
                                                 alt="{{ $detailMedia->alt_text ?: $detailMedia->file_name }}"
                                                 class="w-full h-auto object-contain max-h-[500px] mx-auto"
                                             />
@@ -834,7 +813,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Formulaire (Colonne droite) --}}
+                                {{-- Colonne droite : Formulaire --}}
                                 <div class="space-y-6">
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
@@ -886,14 +865,14 @@
                         {{-- Footer --}}
                         <div class="border-t-2 border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 px-6 py-5">
                             <div class="flex items-center justify-end gap-3">
-                    <x-filament::button
+                                <x-filament::button
                                     wire:click="closeDetailModal"
-                        color="gray"
-                        outlined
+                                    color="gray"
+                                    outlined
                                     size="sm"
-                    >
-                        Annuler
-                    </x-filament::button>
+                                >
+                                    Annuler
+                                </x-filament::button>
                                 <x-filament::button
                                     wire:click="updateMediaDetails"
                                     color="primary"
@@ -915,13 +894,4 @@
             </div>
         </div>
     {{-- Fin Detail Modal --}}
-
-    {{-- Debug --}}
-    @if(config('app.debug'))
-        <div class="mt-4 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-xs">
-            <strong>Debug:</strong><br>
-            showDetailModal: @json($showDetailModal)<br>
-            detailMedia: @json($detailMedia !== null)
-        </div>
-    @endif
 </div>

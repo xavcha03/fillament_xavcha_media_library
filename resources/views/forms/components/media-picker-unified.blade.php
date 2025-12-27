@@ -9,6 +9,9 @@
     $showUpload = $getShowUpload();
     $showLibrary = $getShowLibrary();
     $conversion = $getConversion();
+    $maxFileSize = $getMaxFileSize();
+    $allowReordering = $canReorder();
+    $downloadable = $isDownloadable();
 @endphp
 
 <x-dynamic-component
@@ -27,6 +30,9 @@
             showUpload: @js($showUpload),
             showLibrary: @js($showLibrary),
             conversion: @js($conversion),
+            maxFileSize: @js($maxFileSize),
+            allowReordering: @js($allowReordering),
+            downloadable: @js($downloadable),
             baseUrl: @js(url('/media-library-pro/serve/')),
             statePath: @js($getStatePath())
         })"
@@ -109,8 +115,10 @@
         {{-- Hidden Input --}}
         <input
             type="hidden"
-            x-bind:value="multiple ? JSON.stringify(selected) : (selected.length > 0 ? selected[0] : '')"
-            {{ $applyStateBindingModifiers('wire:model') }}="{{ $getStatePath() }}"
+            id="{{ $getStatePath() }}_hidden"
+            x-ref="hiddenInput"
+            x-bind:value="multiple ? (selected.length > 0 ? JSON.stringify(selected) : '[]') : (selected.length > 0 ? selected[0].toString() : '')"
+            wire:model.live="{{ $getStatePath() }}"
         />
 
         {{-- Modal --}}
@@ -203,6 +211,7 @@
                                     'multiple' => $isMultiple,
                                     'acceptedTypes' => $acceptedTypes,
                                     'selectedIds' => $selectedMedia,
+                                    'filterCollection' => $collection,
                                 ], key('library-picker-' . $getStatePath()))
                             </div>
 
@@ -214,6 +223,7 @@
                                     'acceptedTypes' => $acceptedTypes,
                                     'selectedIds' => $selectedMedia,
                                     'uploadMode' => true,
+                                    'filterCollection' => $collection,
                                 ], key('upload-picker-' . $getStatePath()))
                             </div>
                         </div>
@@ -232,6 +242,7 @@
                             <x-filament::button
                                 type="button"
                                 x-on:click="confirmSelection()"
+                                x-bind:disabled="hasPendingUploads"
                                 size="sm"
                                 color="primary"
                             >
@@ -262,6 +273,7 @@
             conversion: config.conversion || null,
             baseUrl: config.baseUrl || '',
             statePath: config.statePath || '',
+            hasPendingUploads: false, // Fichiers sélectionnés mais pas encore uploadés
             
             getMediaUrl(mediaId) {
                 // mediaId est un ID, on doit récupérer l'UUID depuis selectedFiles
@@ -277,35 +289,99 @@
             },
             
             init() {
+                // S'assurer que les IDs dans selected sont des entiers pour correspondre aux clés de selectedFiles
+                this.selected = this.selected.map(id => parseInt(id));
+                
+                // S'assurer que les clés de selectedFiles sont des entiers
+                const normalizedFiles = {};
+                Object.keys(this.selectedFiles).forEach(key => {
+                    normalizedFiles[parseInt(key)] = this.selectedFiles[key];
+                });
+                this.selectedFiles = normalizedFiles;
+                
+                // Watcher pour mettre à jour automatiquement le champ caché quand selected change
+                this.$watch('selected', (newValue, oldValue) => {
+                    if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+                        this.$nextTick(() => {
+                            this.updateForm();
+                        });
+                    }
+                }, { deep: true });
+                
                 // Écouter les événements globaux de sélection depuis le composant Livewire
                 window.addEventListener('media-library-picker-select', (e) => {
                     // Mettre à jour selectedFiles avec les infos du fichier sélectionné
                     if (e.detail.mediaId && e.detail.mediaUuid) {
-                        this.selectedFiles[e.detail.mediaId] = {
-                            id: e.detail.mediaId,
+                        const mediaId = parseInt(e.detail.mediaId);
+                        this.selectedFiles[mediaId] = {
+                            id: mediaId,
                             uuid: e.detail.mediaUuid,
                             file_name: e.detail.mediaFileName || '',
                             url: e.detail.mediaUrl || this.baseUrl + e.detail.mediaUuid,
                             conversions: {}
                         };
                     }
-                    this.toggleMedia(e.detail.mediaId);
+                    this.toggleMedia(parseInt(e.detail.mediaId));
                 });
 
                 // Écouter les événements d'upload
                 window.addEventListener('media-library-picker-uploaded', (e) => {
                     if (e.detail.mediaId && e.detail.mediaUuid) {
+                        const mediaId = parseInt(e.detail.mediaId);
                         // Mettre à jour selectedFiles avec les infos du fichier uploadé
-                        this.selectedFiles[e.detail.mediaId] = {
-                            id: e.detail.mediaId,
+                        this.selectedFiles[mediaId] = {
+                            id: mediaId,
                             uuid: e.detail.mediaUuid,
                             file_name: e.detail.mediaFileName || '',
                             url: e.detail.mediaUrl || this.baseUrl + e.detail.mediaUuid,
                             conversions: {}
                         };
-                        this.toggleMedia(e.detail.mediaId);
+                        // Ajouter à la sélection
+                        if (this.multiple) {
+                            if (!this.selected.includes(mediaId)) {
+                                this.selected.push(mediaId);
+                            }
+                            // Retourner à l'onglet Bibliothèque après l'upload
+                            if (this.showLibrary) {
+                                this.activeTab = 'library';
+                            }
+                        } else {
+                            this.selected = [mediaId];
+                            // Fermer le modal si sélection unique
+                            this.open = false;
+                        }
+                        // Mettre à jour le formulaire
+                        this.updateForm();
+                        // Réinitialiser l'état des uploads en attente
+                        this.hasPendingUploads = false;
                     }
                 });
+                
+                // Vérifier périodiquement s'il y a des fichiers en attente d'upload
+                const checkPendingUploads = () => {
+                    // Chercher le composant Livewire d'upload dans le modal
+                    const uploadTab = this.$el.querySelector('[x-show*=\"upload\"]');
+                    if (uploadTab) {
+                        const wireElement = uploadTab.querySelector('[wire\\:id]');
+                        if (wireElement) {
+                            const wireId = wireElement.getAttribute('wire:id');
+                            if (wireId && window.Livewire) {
+                                const component = window.Livewire.find(wireId);
+                                if (component && component.get) {
+                                    const files = component.get('uploadedFiles');
+                                    this.hasPendingUploads = Array.isArray(files) && files.length > 0;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    this.hasPendingUploads = false;
+                };
+                
+                // Vérifier toutes les 300ms
+                setInterval(checkPendingUploads, 300);
+                // Vérifier immédiatement
+                this.$nextTick(checkPendingUploads);
             },
             
             toggleMedia(mediaId) {
@@ -325,14 +401,17 @@
                     }
                 } else {
                     this.selected = [mediaId];
+                    this.open = false;
                 }
                 this.updateForm();
             },
             
             removeMedia(mediaId) {
-                const index = this.selected.indexOf(parseInt(mediaId));
+                mediaId = parseInt(mediaId);
+                const index = this.selected.indexOf(mediaId);
                 if (index > -1) {
                     this.selected.splice(index, 1);
+                    // Mettre à jour immédiatement
                     this.updateForm();
                 }
             },
@@ -349,21 +428,106 @@
             },
             
             updateForm() {
-                const hiddenInput = this.$el.querySelector('input[type="hidden"][wire\\:model]');
-                if (hiddenInput) {
-                    const value = this.multiple 
-                        ? JSON.stringify(this.selected) 
-                        : (this.selected.length > 0 ? this.selected[0].toString() : '');
-                    
-                    hiddenInput.value = value;
-                    
-                    // Déclencher les événements pour mettre à jour Livewire
-                    hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    
-                    // Utiliser $wire si disponible (Filament v4+)
-                    if (this.$wire && this.statePath) {
+                const hiddenInput = this.$refs.hiddenInput || this.$el.querySelector('input[type="hidden"][wire\\:model]');
+                if (!hiddenInput) {
+                    console.warn('Hidden input not found');
+                    return;
+                }
+                
+                // Calculer la nouvelle valeur
+                let value;
+                if (this.multiple) {
+                    value = this.selected.length > 0 ? JSON.stringify(this.selected) : '[]';
+                } else {
+                    value = this.selected.length > 0 ? this.selected[0].toString() : '';
+                }
+                
+                // Mettre à jour la valeur de l'input
+                const oldValue = hiddenInput.value;
+                hiddenInput.value = value;
+                
+                // Si la valeur n'a pas changé, ne rien faire
+                if (oldValue === value) {
+                    return;
+                }
+                
+                // Trouver tous les composants Livewire possibles
+                const wireElements = this.$el.querySelectorAll('[wire\\:id]');
+                let livewireComponent = null;
+                
+                // Chercher le composant Livewire le plus proche (formulaire Filament)
+                for (let element of wireElements) {
+                    const wireId = element.getAttribute('wire:id');
+                    if (wireId && window.Livewire) {
+                        const component = window.Livewire.find(wireId);
+                        if (component) {
+                            livewireComponent = component;
+                            break;
+                        }
+                    }
+                }
+                
+                // Si on ne trouve pas, chercher dans le parent
+                if (!livewireComponent) {
+                    const parentWire = this.$el.closest('[wire\\:id]');
+                    if (parentWire) {
+                        const wireId = parentWire.getAttribute('wire:id');
+                        if (wireId && window.Livewire) {
+                            livewireComponent = window.Livewire.find(wireId);
+                        }
+                    }
+                }
+                
+                // Méthode 1: Utiliser $wire si disponible (Alpine.js + Livewire)
+                if (this.$wire && this.statePath) {
+                    try {
                         this.$wire.set(this.statePath, value);
+                    } catch (e) {
+                        console.warn('Erreur $wire.set:', e);
+                    }
+                }
+                
+                // Méthode 2: Utiliser Livewire directement avec le statePath
+                if (livewireComponent && this.statePath) {
+                    try {
+                        livewireComponent.set(this.statePath, value);
+                    } catch (e) {
+                        console.warn('Erreur Livewire.set avec statePath:', e);
+                    }
+                }
+                
+                // Méthode 3: Utiliser le nom du wire:model directement
+                const wireModelAttr = hiddenInput.getAttribute('wire:model') || hiddenInput.getAttribute('wire:model.live') || hiddenInput.getAttribute('wire:model.defer');
+                if (livewireComponent && wireModelAttr) {
+                    try {
+                        livewireComponent.set(wireModelAttr, value);
+                    } catch (e) {
+                        console.warn('Erreur Livewire.set avec wire:model:', e);
+                    }
+                }
+                
+                // Méthode 4: Déclencher les événements DOM (pour wire:model)
+                // Utiliser un InputEvent au lieu d'un Event simple
+                const inputEvent = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: value,
+                    inputType: 'insertText'
+                });
+                hiddenInput.dispatchEvent(inputEvent);
+                
+                const changeEvent = new Event('change', {
+                    bubbles: true,
+                    cancelable: true
+                });
+                hiddenInput.dispatchEvent(changeEvent);
+                
+                // Méthode 5: Déclencher un événement Livewire personnalisé
+                if (livewireComponent) {
+                    try {
+                        livewireComponent.call('$set', wireModelAttr || this.statePath, value);
+                    } catch (e) {
+                        // Ignorer si la méthode n'existe pas
                     }
                 }
             }

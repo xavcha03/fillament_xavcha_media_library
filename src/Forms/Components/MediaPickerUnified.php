@@ -21,6 +21,9 @@ class MediaPickerUnified extends Field
     protected bool | Closure $showUpload = true;
     protected bool | Closure $showLibrary = true;
     protected string | Closure | null $conversion = null;
+    protected int | Closure | null $maxFileSize = null; // En KB
+    protected bool | Closure $allowReordering = false;
+    protected bool | Closure $downloadable = false;
 
     public static function make(?string $name = null): static
     {
@@ -86,6 +89,72 @@ class MediaPickerUnified extends Field
         return $this;
     }
 
+    /**
+     * Définit la taille maximale d'un fichier en KB
+     */
+    public function maxFileSize(int | Closure | null $maxSize): static
+    {
+        $this->maxFileSize = $maxSize;
+
+        return $this;
+    }
+
+    /**
+     * Permet de réorganiser les fichiers sélectionnés (drag & drop)
+     */
+    public function allowReordering(bool | Closure $allow = true): static
+    {
+        $this->allowReordering = $allow;
+
+        return $this;
+    }
+
+    /**
+     * Permet de télécharger les fichiers depuis l'aperçu
+     */
+    public function downloadable(bool | Closure $downloadable = true): static
+    {
+        $this->downloadable = $downloadable;
+
+        return $this;
+    }
+
+    /**
+     * Méthode de convenance pour sélection unique (équivalent à multiple(false))
+     */
+    public function single(): static
+    {
+        $this->multiple = false;
+        $this->maxFiles = 1;
+        $this->minFiles = 0;
+
+        return $this;
+    }
+
+    /**
+     * Méthode de convenance pour sélection multiple avec limites
+     */
+    public function limit(int $min, ?int $max = null): static
+    {
+        $this->multiple = true;
+        $this->minFiles = $min;
+        $this->maxFiles = $max;
+
+        return $this;
+    }
+
+    /**
+     * Définit un nombre exact de fichiers requis
+     */
+    public function exactFiles(int $count): static
+    {
+        $this->multiple = true;
+        $this->minFiles = $count;
+        $this->maxFiles = $count;
+
+        return $this;
+    }
+
     public function getAcceptedFileTypes(): array
     {
         return $this->evaluate($this->acceptedFileTypes);
@@ -126,6 +195,21 @@ class MediaPickerUnified extends Field
         return $this->evaluate($this->conversion);
     }
 
+    public function getMaxFileSize(): ?int
+    {
+        return $this->evaluate($this->maxFileSize);
+    }
+
+    public function canReorder(): bool
+    {
+        return $this->evaluate($this->allowReordering);
+    }
+
+    public function isDownloadable(): bool
+    {
+        return $this->evaluate($this->downloadable);
+    }
+
     public function getSelectedMedia(): array
     {
         $value = $this->getState();
@@ -136,13 +220,19 @@ class MediaPickerUnified extends Field
 
         if ($this->isMultiple()) {
             if (is_array($value)) {
-                return array_filter($value, fn($id) => !empty($id));
+                // Convertir en entiers pour cohérence
+                return array_map('intval', array_filter($value, fn($id) => !empty($id)));
             }
             $decoded = json_decode($value, true);
-            return is_array($decoded) ? array_filter($decoded, fn($id) => !empty($id)) : [];
+            if (is_array($decoded)) {
+                // Convertir en entiers pour cohérence
+                return array_map('intval', array_filter($decoded, fn($id) => !empty($id)));
+            }
+            return [];
         }
 
-        return [$value];
+        // Pour single, convertir en entier
+        return [(int) $value];
     }
 
     public function getSelectedMediaFiles(): array
@@ -156,10 +246,13 @@ class MediaPickerUnified extends Field
         $files = MediaFile::whereIn('id', $ids)
             ->with('conversions')
             ->get()
-            ->keyBy('id')
+            ->keyBy(function ($file) {
+                // Utiliser l'ID comme entier pour la clé
+                return (int) $file->id;
+            })
             ->map(function ($file) {
                 return [
-                    'id' => $file->id,
+                    'id' => (int) $file->id, // S'assurer que c'est un entier
                     'uuid' => $file->uuid,
                     'file_name' => $file->file_name,
                     'url' => route('media-library-pro.serve', ['media' => $file->uuid]),

@@ -39,22 +39,91 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400">Upload en cours...</p>
             </div>
 
+            {{-- Aperçu des fichiers sélectionnés --}}
             @if(count($uploadedFiles) > 0)
-                <div class="mt-4">
-                    <button
-                        type="button"
-                        wire:click="uploadFiles"
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                    >
-                        <span wire:loading.remove wire:target="uploadFiles">Uploader {{ count($uploadedFiles) }} fichier(s)</span>
-                        <span wire:loading wire:target="uploadFiles">Upload en cours...</span>
-                    </button>
+                <div class="mt-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                                <span>📎</span>
+                                <span>Fichiers sélectionnés</span>
+                            </h4>
+                            <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                <span class="font-bold text-primary-600 dark:text-primary-400">{{ count($uploadedFiles) }}</span> fichier(s)
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            wire:click="$set('uploadedFiles', [])"
+                            class="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                            Tout effacer
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-64 overflow-y-auto rounded-lg border-2 border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+                        @foreach($uploadedFiles as $index => $file)
+                            <div class="relative group">
+                                <div class="aspect-square rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-sm border-2 border-gray-200 dark:border-gray-700 transition-all group-hover:shadow-md">
+                                    @if(method_exists($file, 'getMimeType') && str_starts_with($file->getMimeType(), 'image/'))
+                                        <img 
+                                            src="{{ $file->temporaryUrl() }}" 
+                                            alt="{{ $file->getClientOriginalName() }}"
+                                            class="w-full h-full object-cover"
+                                        />
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+                                            <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="$wire.removeUploadedFile({{ $index }})"
+                                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Supprimer"
+                                >
+                                    ×
+                                </button>
+                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate" title="{{ $file->getClientOriginalName() }}">
+                                    {{ Str::limit($file->getClientOriginalName(), 15) }}
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button
+                            type="button"
+                            wire:click="uploadFiles"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="uploadFiles">Uploader {{ count($uploadedFiles) }} fichier(s)</span>
+                            <span wire:loading wire:target="uploadFiles">Upload en cours...</span>
+                        </button>
+                    </div>
                 </div>
             @endif
         </div>
     @else
         {{-- Library Mode --}}
+        {{-- Filtre par collection --}}
+        <div class="mb-4">
+            <label class="fi-input-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Collection
+            </label>
+            <select 
+                wire:model.live="filterCollection" 
+                class="fi-input block w-full rounded-lg border-none bg-white px-3 py-2 text-base text-gray-950 shadow-sm ring-1 ring-inset ring-gray-950/10 outline-none transition duration-75 focus:ring-2 focus:ring-primary-500 dark:bg-white/5 dark:text-white dark:ring-white/20 dark:focus:ring-primary-500"
+            >
+                <option value="">Toutes les collections</option>
+                @foreach(\Xavier\MediaLibraryPro\Models\MediaAttachment::distinct()->pluck('collection_name')->filter() as $collection)
+                    <option value="{{ $collection }}">{{ $collection }}</option>
+                @endforeach
+            </select>
+        </div>
+
         @if($media->count() > 0)
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 @foreach($media as $item)
