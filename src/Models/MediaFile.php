@@ -4,6 +4,7 @@ namespace Xavier\MediaLibraryPro\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +36,7 @@ class MediaFile extends Model
         'alt_text',
         'description',
         'is_public',
+        'folder_id',
     ];
 
     protected $casts = [
@@ -68,6 +70,11 @@ class MediaFile extends Model
     public function conversions(): HasMany
     {
         return $this->hasMany(MediaConversion::class, 'media_file_id');
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(MediaFolder::class, 'folder_id');
     }
 
     /**
@@ -163,6 +170,45 @@ class MediaFile extends Model
         }
 
         return $conversion->getUrl();
+    }
+
+    /**
+     * Renomme le fichier
+     */
+    public function rename(string $newName): bool
+    {
+        // Valider le nouveau nom
+        if (empty(trim($newName))) {
+            throw new \InvalidArgumentException('Le nom du fichier ne peut pas être vide');
+        }
+
+        // Conserver l'extension
+        $extension = $this->getExtension();
+        $nameWithoutExtension = pathinfo($newName, PATHINFO_FILENAME);
+        
+        // Si le nouveau nom n'a pas d'extension, utiliser celle du fichier actuel
+        if (empty(pathinfo($newName, PATHINFO_EXTENSION)) && !empty($extension)) {
+            $newName = $nameWithoutExtension . '.' . $extension;
+        }
+
+        // Vérifier que le nom n'existe pas déjà dans le même dossier
+        $existingFile = MediaFile::where('folder_id', $this->folder_id)
+            ->where('file_name', $newName)
+            ->where('id', '!=', $this->id)
+            ->first();
+
+        if ($existingFile) {
+            throw new \InvalidArgumentException("Un fichier avec le nom '{$newName}' existe déjà dans ce dossier");
+        }
+
+        // Valider les caractères interdits (mais autoriser les apostrophes et espaces)
+        if (preg_match('/[<>:"|?*\/\\\\]/', $newName)) {
+            throw new \InvalidArgumentException('Le nom du fichier contient des caractères interdits (< > : " | ? * / \\)');
+        }
+
+        // Mettre à jour le nom
+        $this->file_name = $newName;
+        return $this->save();
     }
 
     /**

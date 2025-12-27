@@ -28,6 +28,19 @@
 
         <div class="flex items-center gap-2">
             @if(!$pickerMode)
+                @if(config('media-library-pro.actions.create_folder', true) && config('media-library-pro.folders.enabled', true))
+                    <x-filament::button
+                        wire:click="openCreateFolderModal"
+                        size="sm"
+                        color="success"
+                        outlined
+                    >
+                        <x-slot name="icon">
+                            <x-heroicon-o-folder-plus class="w-4 h-4" />
+                        </x-slot>
+                        Créer un dossier
+                    </x-filament::button>
+                @endif
                 <x-filament::button
                     wire:click="openUploadModal"
                     size="sm"
@@ -95,6 +108,51 @@
             </x-filament::button>
         </div>
     </div>
+
+    {{-- Breadcrumbs pour navigation par dossiers --}}
+    @if(!$pickerMode && config('media-library-pro.folders.enabled', true))
+        <div class="flex items-center gap-2 text-sm">
+            <button
+                wire:click="navigateToFolder(null)"
+                class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium"
+            >
+                Racine
+            </button>
+            @if($currentFolder)
+                @php
+                    $breadcrumbs = $currentFolder->getBreadcrumbs();
+                @endphp
+                @foreach($breadcrumbs as $index => $crumb)
+                    @if($crumb['id'] !== null)
+                        <span class="text-gray-400 dark:text-gray-600">/</span>
+                        <button
+                            wire:click="navigateToFolder({{ $crumb['id'] }})"
+                            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium"
+                        >
+                            {{ $crumb['name'] }}
+                        </button>
+                    @endif
+                @endforeach
+            @endif
+        </div>
+    @endif
+
+    {{-- Dossiers enfants --}}
+    @if(!$pickerMode && config('media-library-pro.folders.enabled', true) && $childFolders && $childFolders->count() > 0)
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mb-6">
+            @foreach($childFolders as $folder)
+                <button
+                    wire:click="navigateToFolder({{ $folder->id }})"
+                    class="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all group"
+                >
+                    <x-heroicon-o-folder class="h-12 w-12 text-primary-500 dark:text-primary-400 mb-2 group-hover:scale-110 transition-transform" />
+                    <span class="text-sm font-medium text-gray-900 dark:text-white truncate w-full text-center">
+                        {{ $folder->name }}
+                    </span>
+                </button>
+            @endforeach
+        </div>
+    @endif
 
     {{-- Filters --}}
     <x-filament::section>
@@ -842,21 +900,75 @@
                                         ></textarea>
                                     </div>
 
-                                    {{-- Section pour futures fonctionnalités --}}
+                                    {{-- Section Actions --}}
                                     <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-                                        <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-4">Actions</h4>
-                                        <div class="space-y-3">
-                                            @if($detailMedia->isImage())
+                                        <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                            <x-heroicon-o-bolt class="h-4 w-4 text-primary-500" />
+                                            <span>Actions rapides</span>
+                                        </h4>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            @if(config('media-library-pro.actions.rename', true))
                                                 <button
                                                     type="button"
-                                                    disabled
-                                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium cursor-not-allowed opacity-50"
+                                                    wire:click="openRenameModal"
+                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900/20 hover:border-warning-400 dark:hover:border-warning-600 hover:bg-warning-100 dark:hover:bg-warning-900/40 transition-all"
                                                 >
-                                                    <x-heroicon-o-arrow-path class="h-5 w-5" />
-                                                    <span>Compresser l'image (bientôt disponible)</span>
+                                                    <div class="p-2 rounded-lg bg-warning-500 dark:bg-warning-600 group-hover:scale-110 transition-transform">
+                                                        <x-heroicon-o-pencil class="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Renommer</span>
+                                                </button>
+                                            @endif
+                                            @if(config('media-library-pro.actions.download', true))
+                                                <a
+                                                    href="{{ route('media-library-pro.download', ['media' => $detailMedia->uuid]) }}"
+                                                    target="_blank"
+                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/20 hover:border-success-400 dark:hover:border-success-600 hover:bg-success-100 dark:hover:bg-success-900/40 transition-all"
+                                                >
+                                                    <div class="p-2 rounded-lg bg-success-500 dark:bg-success-600 group-hover:scale-110 transition-transform">
+                                                        <x-heroicon-o-arrow-down-tray class="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Télécharger</span>
+                                                </a>
+                                            @endif
+                                            @if(config('media-library-pro.actions.move', true) && config('media-library-pro.folders.enabled', true))
+                                                <button
+                                                    type="button"
+                                                    wire:click="openMoveModal"
+                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/20 hover:border-info-400 dark:hover:border-info-600 hover:bg-info-100 dark:hover:bg-info-900/40 transition-all"
+                                                >
+                                                    <div class="p-2 rounded-lg bg-info-500 dark:bg-info-600 group-hover:scale-110 transition-transform">
+                                                        <x-heroicon-o-arrow-right-circle class="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Déplacer</span>
+                                                </button>
+                                            @endif
+                                            @if(config('media-library-pro.actions.delete', true))
+                                                <button
+                                                    type="button"
+                                                    wire:click="deleteMedia('{{ $detailMedia->uuid }}')"
+                                                    wire:confirm="Êtes-vous sûr de vouloir supprimer ce fichier ?"
+                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/20 hover:border-danger-400 dark:hover:border-danger-600 hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-all"
+                                                >
+                                                    <div class="p-2 rounded-lg bg-danger-500 dark:bg-danger-600 group-hover:scale-110 transition-transform">
+                                                        <x-heroicon-o-trash class="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Supprimer</span>
                                                 </button>
                                             @endif
                                         </div>
+                                        @if($detailMedia->isImage())
+                                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium cursor-not-allowed opacity-50 text-sm"
+                                                >
+                                                    <x-heroicon-o-arrow-path class="h-4 w-4" />
+                                                    <span>Compresser (bientôt)</span>
+                                                </button>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -894,4 +1006,325 @@
             </div>
         </div>
     {{-- Fin Detail Modal --}}
+
+    {{-- Modale de renommage --}}
+    @if($showRenameModal && $detailMedia)
+        <div 
+            x-data="{ open: @entangle('showRenameModal') }"
+            x-show="open"
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto"
+            style="display: none;"
+        >
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    x-on:click="open = false"
+                ></div>
+
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                >
+                    <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                        <button
+                            type="button"
+                            wire:click="closeRenameModal"
+                            class="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        >
+                            <x-heroicon-o-x-mark class="h-6 w-6" />
+                        </button>
+                    </div>
+
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-warning-100 dark:bg-warning-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                            <x-heroicon-o-pencil class="h-6 w-6 text-warning-600 dark:text-warning-400" />
+                        </div>
+                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white mb-2">
+                                Renommer le fichier
+                            </h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Entrez le nouveau nom du fichier. L'extension sera conservée automatiquement.
+                            </p>
+
+                            <form wire:submit="renameMedia">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                            Nom du fichier
+                                        </label>
+                                        <input
+                                            type="text"
+                                            wire:model="renameFileName"
+                                            placeholder="Nom du fichier"
+                                            class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
+                                            autofocus
+                                        />
+                                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            Extension actuelle : <span class="font-semibold">{{ $detailMedia->getExtension() }}</span>
+                                        </p>
+                                        @error('renameFileName')
+                                            <p class="mt-1 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+                                    <x-filament::button
+                                        type="submit"
+                                        color="warning"
+                                        size="sm"
+                                    >
+                                        <x-slot name="icon">
+                                            <x-heroicon-o-check class="h-4 w-4" />
+                                        </x-slot>
+                                        Renommer
+                                    </x-filament::button>
+                                    <x-filament::button
+                                        wire:click="closeRenameModal"
+                                        color="gray"
+                                        outlined
+                                        size="sm"
+                                    >
+                                        Annuler
+                                    </x-filament::button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modale de création de dossier --}}
+    @if($showCreateFolderModal)
+        <div 
+            x-data="{ open: @entangle('showCreateFolderModal') }"
+            x-show="open"
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto"
+            style="display: none;"
+        >
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    x-on:click="open = false"
+                ></div>
+
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                >
+                    <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                        <button
+                            type="button"
+                            wire:click="closeCreateFolderModal"
+                            class="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        >
+                            <x-heroicon-o-x-mark class="h-6 w-6" />
+                        </button>
+                    </div>
+
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-success-100 dark:bg-success-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                            <x-heroicon-o-folder-plus class="h-6 w-6 text-success-600 dark:text-success-400" />
+                        </div>
+                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white mb-2">
+                                Créer un nouveau dossier
+                            </h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Créez un nouveau dossier pour organiser vos médias.
+                            </p>
+
+                            <form wire:submit="createFolder">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                            Nom du dossier
+                                        </label>
+                                        <input
+                                            type="text"
+                                            wire:model="folderName"
+                                            placeholder="Nom du dossier"
+                                            class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
+                                            autofocus
+                                        />
+                                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            Le dossier sera créé dans : 
+                                            <span class="font-semibold">
+                                                @if($currentFolder)
+                                                    {{ $currentFolder->name }}
+                                                @else
+                                                    Racine
+                                                @endif
+                                            </span>
+                                        </p>
+                                        @error('folderName')
+                                            <p class="mt-1 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+                                    <x-filament::button
+                                        type="submit"
+                                        color="success"
+                                        size="sm"
+                                    >
+                                        <x-slot name="icon">
+                                            <x-heroicon-o-check class="h-4 w-4" />
+                                        </x-slot>
+                                        Créer
+                                    </x-filament::button>
+                                    <x-filament::button
+                                        wire:click="closeCreateFolderModal"
+                                        color="gray"
+                                        outlined
+                                        size="sm"
+                                    >
+                                        Annuler
+                                    </x-filament::button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modale de déplacement --}}
+    @if($showMoveModal && $detailMedia)
+        <div 
+            x-data="{ open: @entangle('showMoveModal') }"
+            x-show="open"
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto"
+            style="display: none;"
+        >
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                    x-on:click="open = false"
+                ></div>
+
+                <div 
+                    x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                >
+                    <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                        <button
+                            type="button"
+                            wire:click="closeMoveModal"
+                            class="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        >
+                            <x-heroicon-o-x-mark class="h-6 w-6" />
+                        </button>
+                    </div>
+
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-info-100 dark:bg-info-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                            <x-heroicon-o-arrow-right-circle class="h-6 w-6 text-info-600 dark:text-info-400" />
+                        </div>
+                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white mb-2">
+                                Déplacer le fichier
+                            </h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Sélectionnez le dossier de destination pour ce fichier.
+                            </p>
+
+                            <form wire:submit="moveMedia">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                            Dossier de destination
+                                        </label>
+                                        <select
+                                            wire:model="moveFolderId"
+                                            class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
+                                        >
+                                            <option value="">Racine</option>
+                                            @php
+                                                $allFolders = \Xavier\MediaLibraryPro\Models\MediaFolder::orderBy('name')->get();
+                                            @endphp
+                                            @foreach($allFolders as $folder)
+                                                <option value="{{ $folder->id }}">{{ $folder->getFullPath() }}</option>
+                                            @endforeach
+                                        </select>
+                                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            Fichier actuel : <span class="font-semibold">{{ $detailMedia->file_name }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+                                    <x-filament::button
+                                        type="submit"
+                                        color="info"
+                                        size="sm"
+                                    >
+                                        <x-slot name="icon">
+                                            <x-heroicon-o-check class="h-4 w-4" />
+                                        </x-slot>
+                                        Déplacer
+                                    </x-filament::button>
+                                    <x-filament::button
+                                        wire:click="closeMoveModal"
+                                        color="gray"
+                                        outlined
+                                        size="sm"
+                                    >
+                                        Annuler
+                                    </x-filament::button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

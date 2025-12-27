@@ -75,6 +75,7 @@ class MediaLibraryProServiceProvider extends ServiceProvider
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaStorageService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaUploadService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaConversionService::class);
+        $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaFolderService::class);
         
         // Note: ImageConversionService a été remplacé par MediaConversionService
         // Il est conservé pour compatibilité mais n'est plus utilisé
@@ -95,6 +96,11 @@ class MediaLibraryProServiceProvider extends ServiceProvider
                 Route::get('/serve/{media}', [\Xavier\MediaLibraryPro\Http\Controllers\MediaServeController::class, 'show'])
                     ->where('media', '[0-9a-fA-F\-]+') // UUID format
                     ->name('serve');
+                
+                // Route pour télécharger les médias
+                Route::get('/download/{media}', [\Xavier\MediaLibraryPro\Http\Controllers\MediaDownloadController::class, 'download'])
+                    ->where('media', '[0-9a-fA-F\-]+') // UUID format
+                    ->name('download');
             });
     }
 }

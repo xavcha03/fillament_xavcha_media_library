@@ -107,3 +107,4 @@ MediaPickerUnified::make('image_ids')
 
 Le système est maintenant complet et fonctionnel. Vous pouvez utiliser `MediaPickerUnified` dans n'importe quelle ressource Filament pour gérer les images sans duplication.
 
+

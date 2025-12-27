@@ -504,3 +504,4 @@ Vérifiez que :
 - [README](./README.md) - Documentation générale du package
 - [Architecture](./README.md#-architecture) - Comprendre la structure du package
 
+

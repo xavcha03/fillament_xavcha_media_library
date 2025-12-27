@@ -6,7 +6,9 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Xavier\MediaLibraryPro\Models\MediaFile;
+use Xavier\MediaLibraryPro\Models\MediaFolder;
 use Xavier\MediaLibraryPro\Services\MediaUploadService;
+use Xavier\MediaLibraryPro\Services\MediaFolderService;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -33,11 +35,20 @@ class MediaLibrary extends Component
     public ?MediaFile $detailMedia = null;
     public string $detailAltText = '';
     public string $detailDescription = '';
+    public ?int $currentFolderId = null;
+    public bool $showRenameModal = false;
+    public string $renameFileName = '';
+    public bool $showCreateFolderModal = false;
+    public string $folderName = '';
+    public ?int $folderParentId = null;
+    public bool $showMoveModal = false;
+    public ?int $moveFolderId = null;
 
     protected $queryString = [
         'view' => ['except' => 'grid'],
         'sortBy' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
+        'currentFolderId' => ['except' => null],
     ];
 
     public function mount(bool $pickerMode = false, bool $multiple = false, array $acceptedTypes = []): void
@@ -258,6 +269,14 @@ class MediaLibrary extends Component
             });
         }
 
+        // Filtre par dossier
+        if ($this->currentFolderId !== null) {
+            $query->where('folder_id', $this->currentFolderId);
+        } else {
+            // Si on est à la racine, afficher uniquement les fichiers sans dossier
+            $query->whereNull('folder_id');
+        }
+
         // Tri
         $query->orderBy($this->sortBy, $this->sortDirection);
 
@@ -267,8 +286,244 @@ class MediaLibrary extends Component
     public function getMediaProperty()
     {
         return $this->getMediaQuery()
-            ->with('attachments') // Charger les attachments pour éviter N+1
+            ->with(['attachments', 'folder']) // Charger les attachments et le dossier pour éviter N+1
             ->paginate(24);
+    }
+
+    /**
+     * Navigue vers un dossier
+     */
+    public function navigateToFolder(?int $folderId): void
+    {
+        $this->currentFolderId = $folderId;
+        $this->resetPage();
+    }
+
+    /**
+     * Ouvre la modale de renommage
+     */
+    public function openRenameModal(): void
+    {
+        if ($this->detailMedia) {
+            $this->renameFileName = pathinfo($this->detailMedia->file_name, PATHINFO_FILENAME);
+            $this->showRenameModal = true;
+        }
+    }
+
+    /**
+     * Ferme la modale de renommage
+     */
+    public function closeRenameModal(): void
+    {
+        $this->showRenameModal = false;
+        $this->renameFileName = '';
+    }
+
+    /**
+     * Renomme un fichier média
+     */
+    public function renameMedia(): void
+    {
+        if (!$this->detailMedia) {
+            return;
+        }
+
+        $this->validate([
+            'renameFileName' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Caractères interdits : < > : " | ? * / \
+                    if (preg_match('/[<>:"|?*\/\\\\]/', $value)) {
+                        $fail('Le nom du fichier contient des caractères interdits (< > : " | ? * / \\)');
+                    }
+                },
+            ],
+        ], [
+            'renameFileName.required' => 'Le nom du fichier est requis',
+        ]);
+
+        try {
+            $this->detailMedia->rename($this->renameFileName);
+            
+            // Rafraîchir le média
+            $this->detailMedia->refresh();
+            
+            $this->closeRenameModal();
+            
+            session()->flash('notify', [
+                'type' => 'success',
+                'message' => 'Le fichier a été renommé avec succès',
+            ]);
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Ouvre la modale de déplacement
+     */
+    public function openMoveModal(): void
+    {
+        if ($this->detailMedia) {
+            $this->moveFolderId = $this->detailMedia->folder_id;
+            $this->showMoveModal = true;
+        }
+    }
+
+    /**
+     * Ferme la modale de déplacement
+     */
+    public function closeMoveModal(): void
+    {
+        $this->showMoveModal = false;
+        $this->moveFolderId = null;
+    }
+
+    /**
+     * Déplace un fichier vers un dossier
+     */
+    public function moveMedia(): void
+    {
+        if (!$this->detailMedia) {
+            return;
+        }
+
+        try {
+            $folder = $this->moveFolderId ? MediaFolder::find($this->moveFolderId) : null;
+            $this->detailMedia->folder_id = $folder?->id;
+            $this->detailMedia->save();
+            
+            // Rafraîchir le média
+            $this->detailMedia->refresh();
+            
+            $this->closeMoveModal();
+            
+            $destination = $folder ? $folder->name : 'la racine';
+            session()->flash('notify', [
+                'type' => 'success',
+                'message' => "Le fichier a été déplacé vers {$destination}",
+            ]);
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Récupère le dossier actuel
+     */
+    public function getCurrentFolderProperty(): ?MediaFolder
+    {
+        if ($this->currentFolderId === null) {
+            return null;
+        }
+        
+        return MediaFolder::find($this->currentFolderId);
+    }
+
+    /**
+     * Récupère les dossiers enfants du dossier actuel
+     */
+    public function getChildFoldersProperty()
+    {
+        $folderService = app(MediaFolderService::class);
+        return $folderService->getChildFolders($this->currentFolder);
+    }
+
+    /**
+     * Supprime un fichier média
+     */
+    public function deleteMedia(string $mediaUuid): void
+    {
+        try {
+            $mediaFile = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
+            $fileName = $mediaFile->file_name;
+            $mediaFile->delete();
+            
+            $this->closeDetailModal();
+            
+            session()->flash('notify', [
+                'type' => 'success',
+                'message' => "Le fichier '{$fileName}' a été supprimé avec succès",
+            ]);
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Ouvre la modale de création de dossier
+     */
+    public function openCreateFolderModal(): void
+    {
+        $this->folderName = '';
+        $this->folderParentId = $this->currentFolderId;
+        $this->showCreateFolderModal = true;
+    }
+
+    /**
+     * Ferme la modale de création de dossier
+     */
+    public function closeCreateFolderModal(): void
+    {
+        $this->showCreateFolderModal = false;
+        $this->folderName = '';
+        $this->folderParentId = null;
+    }
+
+    /**
+     * Crée un nouveau dossier
+     */
+    public function createFolder(): void
+    {
+        $this->validate([
+            'folderName' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Caractères interdits : < > : " | ? * / \
+                    if (preg_match('/[<>:"|?*\/\\\\]/', $value)) {
+                        $fail('Le nom du dossier contient des caractères interdits (< > : " | ? * / \\)');
+                    }
+                },
+            ],
+        ], [
+            'folderName.required' => 'Le nom du dossier est requis',
+        ]);
+
+        try {
+            $folderService = app(MediaFolderService::class);
+            $parent = $this->folderParentId ? MediaFolder::find($this->folderParentId) : null;
+            $folder = $folderService->create($this->folderName, $parent);
+            
+            $this->closeCreateFolderModal();
+            
+            // Si on était dans un dossier, naviguer vers le nouveau dossier créé
+            if ($this->currentFolderId === $this->folderParentId) {
+                $this->navigateToFolder($folder->id);
+            }
+            
+            session()->flash('notify', [
+                'type' => 'success',
+                'message' => "Le dossier '{$folder->name}' a été créé avec succès",
+            ]);
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function openUploadModal(): void
@@ -422,6 +677,8 @@ class MediaLibrary extends Component
     {
         return view('media-library-pro::livewire.media-library', [
             'media' => $this->media,
+            'currentFolder' => $this->currentFolder,
+            'childFolders' => $this->childFolders,
         ]);
     }
 }
