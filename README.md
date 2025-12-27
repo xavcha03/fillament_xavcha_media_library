@@ -37,6 +37,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - [Migration depuis Spatie](#-migration-depuis-spatie-media-library)
 - [Sécurité](#-sécurité)
 - [Dépannage](#-dépannage)
+- [🎨 Guide de Styling](#-guide-de-styling) - **Important pour le développement**
 - [Contribution](#-contribution)
 
 ## 🚀 Installation
@@ -1027,6 +1028,26 @@ try {
    ```php
    $articles = Article::with('mediaAttachments.mediaFile')->get();
    ```
+
+## 🎨 Guide de Styling
+
+**⚠️ IMPORTANT pour le développement :** Filament ne compile PAS automatiquement les classes Tailwind des packages.
+
+Si vous modifiez les vues Blade ou ajoutez de nouvelles classes Tailwind, vous devez :
+
+1. **Définir manuellement toutes les classes** dans `resources/css/media-library-pro.css`
+2. **Recompiler les assets** après chaque modification :
+   ```bash
+   ddev artisan view:clear && ddev artisan filament:assets
+   ```
+
+📖 **Voir le guide complet :** [STYLING.md](STYLING.md)
+
+### Points clés :
+- ❌ Ne PAS utiliser `@apply` (ne fonctionne pas avec Filament)
+- ✅ Définir toutes les classes manuellement dans le CSS
+- ✅ Inclure les variantes dark mode, responsive, hover, focus
+- ✅ Échapper correctement les classes avec caractères spéciaux (`bg-black/70` → `.bg-black\/70`)
 
 ## 📝 Changelog
 

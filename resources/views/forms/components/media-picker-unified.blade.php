@@ -9,14 +9,7 @@
     $showUpload = $getShowUpload();
     $showLibrary = $getShowLibrary();
     $conversion = $getConversion();
-    $cssPath = public_path('vendor/media-library-pro/css/media-library-pro.css');
 @endphp
-
-@if(file_exists($cssPath))
-    <style>
-        {!! file_get_contents($cssPath) !!}
-    </style>
-@endif
 
 <x-dynamic-component
     :component="$getFieldWrapperView()"
