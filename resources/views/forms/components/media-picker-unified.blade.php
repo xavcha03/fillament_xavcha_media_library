@@ -117,7 +117,6 @@
             type="hidden"
             id="{{ $getStatePath() }}_hidden"
             x-ref="hiddenInput"
-            x-bind:value="multiple ? (selected.length > 0 ? JSON.stringify(selected) : '[]') : (selected.length > 0 ? selected[0].toString() : '')"
             wire:model.live="{{ $getStatePath() }}"
         />
 
@@ -308,6 +307,14 @@
                     }
                 }, { deep: true });
                 
+                // Watcher pour selectedFiles pour forcer le rafraîchissement de l'affichage
+                this.$watch('selectedFiles', () => {
+                    // Forcer le rafraîchissement de l'affichage quand selectedFiles change
+                    this.$nextTick(() => {
+                        // L'affichage se mettra à jour automatiquement via Alpine.js
+                    });
+                }, { deep: true });
+                
                 // Écouter les événements globaux de sélection depuis le composant Livewire
                 window.addEventListener('media-library-picker-select', (e) => {
                     // Mettre à jour selectedFiles avec les infos du fichier sélectionné
@@ -318,10 +325,23 @@
                             uuid: e.detail.mediaUuid,
                             file_name: e.detail.mediaFileName || '',
                             url: e.detail.mediaUrl || this.baseUrl + e.detail.mediaUuid,
-                            conversions: {}
+                            conversions: e.detail.conversions || {}
                         };
+                        
+                        // Pour le mode single, mettre à jour immédiatement la sélection
+                        if (!this.multiple) {
+                            this.selected = [mediaId];
+                            // Fermer le modal
+                            this.open = false;
+                            // Mettre à jour le formulaire immédiatement
+                            this.$nextTick(() => {
+                                this.updateForm();
+                            });
+                        } else {
+                            // Pour le mode multiple, utiliser toggleMedia
+                            this.toggleMedia(mediaId);
+                        }
                     }
-                    this.toggleMedia(parseInt(e.detail.mediaId));
                 });
 
                 // Écouter les événements d'upload
@@ -428,7 +448,7 @@
             },
             
             updateForm() {
-                const hiddenInput = this.$refs.hiddenInput || this.$el.querySelector('input[type="hidden"][wire\\:model]');
+                const hiddenInput = this.$refs.hiddenInput || this.$el.querySelector('input[type="hidden"][wire\\:model], input[type="hidden"][wire\\:model\\.live], input[type="hidden"][wire\\:model\\.defer]');
                 if (!hiddenInput) {
                     console.warn('Hidden input not found');
                     return;
@@ -478,10 +498,14 @@
                     }
                 }
                 
-                // Méthode 1: Utiliser $wire si disponible (Alpine.js + Livewire)
+                // Méthode 1: Utiliser $wire si disponible (Alpine.js + Livewire v3)
                 if (this.$wire && this.statePath) {
                     try {
                         this.$wire.set(this.statePath, value);
+                        // Forcer la mise à jour pour le mode single
+                        if (!this.multiple) {
+                            this.$wire.$commit();
+                        }
                     } catch (e) {
                         console.warn('Erreur $wire.set:', e);
                     }
@@ -491,6 +515,10 @@
                 if (livewireComponent && this.statePath) {
                     try {
                         livewireComponent.set(this.statePath, value);
+                        // Forcer la mise à jour
+                        if (!this.multiple) {
+                            livewireComponent.$commit();
+                        }
                     } catch (e) {
                         console.warn('Erreur Livewire.set avec statePath:', e);
                     }
@@ -501,6 +529,10 @@
                 if (livewireComponent && wireModelAttr) {
                     try {
                         livewireComponent.set(wireModelAttr, value);
+                        // Forcer la mise à jour
+                        if (!this.multiple) {
+                            livewireComponent.$commit();
+                        }
                     } catch (e) {
                         console.warn('Erreur Livewire.set avec wire:model:', e);
                     }
