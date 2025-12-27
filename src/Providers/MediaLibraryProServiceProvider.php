@@ -76,9 +76,6 @@ class MediaLibraryProServiceProvider extends ServiceProvider
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaUploadService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaConversionService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaFolderService::class);
-        
-        // Note: ImageConversionService a été remplacé par MediaConversionService
-        // Il est conservé pour compatibilité mais n'est plus utilisé
     }
 
     protected function loadRoutes(): void

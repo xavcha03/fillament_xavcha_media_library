@@ -223,7 +223,13 @@ trait HasMediaFiles
     }
 
     /**
-     * Méthode helper pour compatibilité avec Spatie
+     * Méthode helper pour faciliter la migration depuis Spatie Media Library
+     * 
+     * Cette méthode est optionnelle et fournie uniquement pour faciliter la migration.
+     * Elle est équivalente à getFirstMediaFile().
+     * 
+     * @param string|null $collection
+     * @return MediaAttachment|null
      */
     public function getFirstMedia(?string $collection = null): ?MediaAttachment
     {
@@ -231,7 +237,13 @@ trait HasMediaFiles
     }
 
     /**
-     * Méthode helper pour compatibilité avec Spatie
+     * Méthode helper pour faciliter la migration depuis Spatie Media Library
+     * 
+     * Cette méthode est optionnelle et fournie uniquement pour faciliter la migration.
+     * Elle est équivalente à getMediaFiles().
+     * 
+     * @param string|null $collection
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getMedia(?string $collection = null): Collection
     {
