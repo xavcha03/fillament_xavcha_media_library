@@ -211,6 +211,7 @@
                                     'acceptedTypes' => $acceptedTypes,
                                     'selectedIds' => $selectedMedia,
                                     'filterCollection' => $collection,
+                                    'statePath' => $getStatePath(),
                                 ], key('library-picker-' . $getStatePath()))
                             </div>
 
@@ -223,6 +224,7 @@
                                     'selectedIds' => $selectedMedia,
                                     'uploadMode' => true,
                                     'filterCollection' => $collection,
+                                    'statePath' => $getStatePath(),
                                 ], key('upload-picker-' . $getStatePath()))
                             </div>
                         </div>
@@ -317,6 +319,11 @@
                 
                 // Écouter les événements globaux de sélection depuis le composant Livewire
                 window.addEventListener('media-library-picker-select', (e) => {
+                    // Filtrer par statePath pour isoler les instances
+                    if (e.detail.statePath && e.detail.statePath !== this.statePath) {
+                        return; // Ignorer les événements qui ne sont pas pour cette instance
+                    }
+                    
                     // Mettre à jour selectedFiles avec les infos du fichier sélectionné
                     if (e.detail.mediaId && e.detail.mediaUuid) {
                         const mediaId = parseInt(e.detail.mediaId);
@@ -346,6 +353,11 @@
 
                 // Écouter les événements d'upload
                 window.addEventListener('media-library-picker-uploaded', (e) => {
+                    // Filtrer par statePath pour isoler les instances
+                    if (e.detail.statePath && e.detail.statePath !== this.statePath) {
+                        return; // Ignorer les événements qui ne sont pas pour cette instance
+                    }
+                    
                     if (e.detail.mediaId && e.detail.mediaUuid) {
                         const mediaId = parseInt(e.detail.mediaId);
                         // Mettre à jour selectedFiles avec les infos du fichier uploadé

@@ -22,6 +22,7 @@ class MediaLibraryPicker extends Component
     public bool $uploadMode = false;
     public ?string $filterCollection = null;
     public ?string $defaultCollection = null; // Collection par défaut pour l'association (pas pour le filtre)
+    public ?string $statePath = null; // StatePath unique pour isoler les instances
     
     public $uploadedFiles = [];
     public bool $isUploading = false;
@@ -38,7 +39,8 @@ class MediaLibraryPicker extends Component
         array $acceptedTypes = [],
         array $selectedIds = [],
         bool $uploadMode = false,
-        ?string $filterCollection = null
+        ?string $filterCollection = null,
+        ?string $statePath = null
     ): void {
         $this->pickerMode = $pickerMode;
         $this->multiple = $multiple;
@@ -50,6 +52,7 @@ class MediaLibraryPicker extends Component
         $this->defaultCollection = $filterCollection; // Garder pour l'association
         $this->filterCollection = null; // Ne pas filtrer par défaut
         $this->uploadCollection = $filterCollection ?? 'default';
+        $this->statePath = $statePath; // StatePath unique pour isoler les instances
     }
 
     public function selectMedia(string $mediaUuid): void
@@ -75,11 +78,13 @@ class MediaLibraryPicker extends Component
         
         // Dispatch event pour le composant parent avec les deux identifiants
         // Les événements Livewire sont dispatchés globalement par défaut
+        // Inclure statePath pour isoler les instances
         $this->dispatch('media-library-picker-select', 
             mediaId: $mediaFile->id, 
             mediaUuid: $mediaFile->uuid,
             mediaFileName: $mediaFile->file_name,
-            mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid])
+            mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid]),
+            statePath: $this->statePath
         );
     }
 
@@ -102,11 +107,13 @@ class MediaLibraryPicker extends Component
 
                 // Dispatch event avec les infos complètes du fichier
                 // Les événements Livewire sont dispatchés globalement par défaut
+                // Inclure statePath pour isoler les instances
                 $this->dispatch('media-library-picker-uploaded', 
                     mediaId: $mediaFile->id,
                     mediaUuid: $mediaFile->uuid,
                     mediaFileName: $mediaFile->file_name,
-                    mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid])
+                    mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid]),
+                    statePath: $this->statePath
                 );
                 
                 // Si multiple, ajouter automatiquement à la sélection
