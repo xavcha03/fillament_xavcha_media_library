@@ -29,6 +29,10 @@ class MediaLibrary extends Component
     public $uploadedFiles = [];
     public bool $showUploadModal = false;
     public ?string $uploadCollection = null;
+    public bool $showDetailModal = false;
+    public ?MediaFile $detailMedia = null;
+    public string $detailAltText = '';
+    public string $detailDescription = '';
 
     protected $queryString = [
         'view' => ['except' => 'grid'],
@@ -222,15 +226,7 @@ class MediaLibrary extends Component
             $query->where('mime_type', 'like', "%{$this->filters['mime_type']}%");
         }
 
-        // Filtre par type de modèle (via attachments)
-        if (!empty($this->filters['model_type'])) {
-            $query->whereHas('attachments', function ($q) {
-                $q->where('model_type', $this->filters['model_type']);
-            });
-        } else {
-            // Par défaut, afficher tous les MediaFile (avec ou sans attachments)
-            // Les fichiers uploadés directement n'ont pas d'attachment et doivent être visibles
-        }
+        // Filtre par type de modèle retiré - plus nécessaire
 
         if (!empty($this->filters['date_from'])) {
             $query->whereDate('created_at', '>=', $this->filters['date_from']);
@@ -381,6 +377,33 @@ class MediaLibrary extends Component
                 'message' => $uploadedCount . ' fichier(s) uploadé(s) avec succès',
             ]);
         }
+    }
+
+    public function openDetailModal(string $mediaUuid): void
+    {
+        $this->detailMedia = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
+        $this->detailAltText = $this->detailMedia->alt_text ?? '';
+        $this->detailDescription = $this->detailMedia->description ?? '';
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal(): void
+    {
+        $this->showDetailModal = false;
+        $this->detailMedia = null;
+    }
+
+    public function updateMediaDetails(): void
+    {
+        if (!$this->detailMedia) {
+            return;
+        }
+
+        $this->detailMedia->alt_text = $this->detailAltText;
+        $this->detailMedia->description = $this->detailDescription;
+        $this->detailMedia->save();
+
+        $this->showDetailModal = false;
     }
 
     public function render()
