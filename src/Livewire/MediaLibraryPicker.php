@@ -26,6 +26,7 @@ class MediaLibraryPicker extends Component
     public $uploadedFiles = [];
     public bool $isUploading = false;
     public string $uploadCollection = 'default';
+    public array $data = []; // Propriété pour éviter l'erreur Livewire PublicPropertyNotFoundException
 
     protected $queryString = [
         'uploadMode' => ['except' => false],

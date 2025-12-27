@@ -15,10 +15,14 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - 🎨 **Interface Filament native** : Composants intégrés pour Filament v4
 - 🔒 **Sécurité** : Support des fichiers publics et privés
 - 🚀 **Performance** : Optimisé pour les gros volumes
-- 📦 **Réutilisable** : Un fichier peut être associé à plusieurs modèles
-- 🎛️ **Configurable** : Configuration flexible et extensible
+- 📦 **Réutilisable** : Un fichier peut être associé à plusieurs modèles (pas de duplication physique)
+- 🎛️ **Configurable** : Configuration flexible et extensible avec API fluente
 - 🔍 **Recherche et filtres** : Filtrage avancé dans la bibliothèque
 - 📱 **Responsive** : Interface adaptée mobile et desktop
+- 🖼️ **Aperçu avant upload** : Visualisation des fichiers avant l'upload
+- ✅ **Validation intelligente** : Désactivation automatique du bouton valider si fichiers en attente
+- 🔄 **Synchronisation automatique** : Retour automatique à la bibliothèque après upload
+- 🗑️ **Suppression persistante** : Suppression avec croix rouge sauvegardée automatiquement
 
 ## 📋 Table des matières
 
@@ -32,6 +36,8 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
   - [Services](#services)
   - [Conversions d'images](#conversions-dimages)
   - [Collections](#collections)
+- [📖 Guide Complet d'Utilisation](./GUIDE_UTILISATION.md) - Guide détaillé pour MediaPickerUnified
+- [🔧 Méthodes Fluentes](./METHODES_FLUENTES.md) - Liste complète des méthodes de configuration
 - [API de référence](#-api-de-référence)
 - [Exemples avancés](#-exemples-avancés)
 - [Migration depuis Spatie](#-migration-depuis-spatie-media-library)
@@ -345,16 +351,24 @@ MediaPickerUnified::make('image_ids')
 
 ##### Propriétés disponibles
 
+Pour la liste complète des méthodes, consultez [METHODES_FLUENTES.md](./METHODES_FLUENTES.md).
+
 | Méthode | Type | Description |
 |---------|------|-------------|
 | `collection(string $collection)` | string | Nom de la collection |
 | `acceptedFileTypes(array $types)` | array | Types MIME acceptés (ex: `['image/*', 'video/*']`) |
 | `multiple(bool $multiple)` | bool | Autoriser la sélection multiple |
+| `single()` | - | Sélection unique (équivalent à `multiple(false)` + `maxFiles(1)`) |
+| `limit(int $min, ?int $max)` | int, int\|null | Définit min et max en une seule méthode |
+| `exactFiles(int $count)` | int | Nombre exact de fichiers requis |
 | `showUpload(bool $show)` | bool | Afficher l'onglet upload |
 | `showLibrary(bool $show)` | bool | Afficher l'onglet bibliothèque |
 | `conversion(?string $conversion)` | string\|null | Conversion à afficher par défaut |
 | `maxFiles(?int $max)` | int\|null | Nombre maximum de fichiers |
 | `minFiles(int $min)` | int | Nombre minimum de fichiers |
+| `maxFileSize(int\|null)` | int\|null | Taille maximale en KB |
+| `allowReordering(bool)` | bool | Permettre la réorganisation (drag & drop) |
+| `downloadable(bool)` | bool | Permettre le téléchargement depuis l'aperçu |
 
 ##### Utilisation dans les pages Create/Edit
 
@@ -487,6 +501,17 @@ class EditArticle extends EditRecord
     }
 }
 ```
+
+> **📖 Pour un guide complet et détaillé** avec tous les exemples, consultez [GUIDE_UTILISATION.md](./GUIDE_UTILISATION.md)
+
+##### Fonctionnalités Avancées
+
+- **Aperçu avant Upload** : Les fichiers sélectionnés s'affichent en miniatures avant l'upload
+- **Retour Automatique** : Après l'upload, retour automatique à l'onglet "Bibliothèque"
+- **Validation Intelligente** : Le bouton "Valider" est désactivé si des fichiers sont en attente d'upload
+- **Suppression Persistante** : La suppression avec la croix rouge est automatiquement sauvegardée
+- **Filtrage par Collection** : Les médias sont automatiquement filtrés par la collection spécifiée
+- **Pas de Duplication** : Les fichiers existants sont réutilisés, pas dupliqués physiquement
 
 ### Services
 
