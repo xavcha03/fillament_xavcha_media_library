@@ -5,6 +5,54 @@ Tous les changements notables de ce package seront documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.1.0] - 2025-01-15
+
+### ✨ Ajouté - Phase 1 : Actions configurables et gestion des dossiers
+
+#### Gestion des dossiers
+- **Table `media_folders`** : Organisation hiérarchique des médias
+- **Modèle `MediaFolder`** : Gestion des dossiers avec relations parent/enfant
+- **Service `MediaFolderService`** : Création, suppression et déplacement de dossiers
+- **Navigation par dossiers** : Breadcrumbs et navigation dans la bibliothèque
+- **Colonne `folder_id`** : Ajout de la relation dossier aux fichiers médias
+
+#### Système d'actions configurables
+- **Trait `HasMediaAction`** : Trait de base pour toutes les actions média
+- **Actions Filament** :
+  - `CreateFolderAction` : Créer un dossier
+  - `CreateFolderBulkAction` : Créer un dossier et déplacer des fichiers
+  - `DeleteAction` : Supprimer un fichier
+  - `DeleteBulkAction` : Supprimer en masse
+  - `DownloadAction` : Télécharger un fichier
+  - `MoveAction` : Déplacer un fichier vers un dossier
+  - `MoveBulkAction` : Déplacer en masse
+  - `RenameAction` : Renommer un fichier
+  - `SelectFileAction` : Sélectionner un fichier
+  - `UploadAction` : Uploader des fichiers
+- **Configuration des actions** : Méthode `::configureUsing()` pour personnaliser chaque action
+
+#### Fonctionnalités ajoutées
+- **Renommage de fichiers** : Interface pour renommer les fichiers avec validation
+- **Téléchargement de fichiers** : Contrôleur et route pour télécharger les médias
+- **Déplacement de fichiers** : Interface pour déplacer les fichiers entre dossiers
+- **Création de dossiers** : Interface pour créer des dossiers hiérarchiques
+
+#### Améliorations de l'interface
+- **Breadcrumbs** : Navigation par dossiers avec fil d'Ariane
+- **Affichage des dossiers** : Grille des dossiers enfants dans la bibliothèque
+- **Boutons d'actions améliorés** : Design moderne avec icônes colorées
+- **Modales** : Modales pour renommer, créer des dossiers et déplacer
+
+#### Configuration
+- Section `folders` dans la configuration
+- Section `actions` pour activer/désactiver les actions
+- Options de profondeur maximale des dossiers
+
+#### Routes
+- Route `/media-library-pro/download/{media}` : Téléchargement de fichiers
+
+---
+
 ## [1.0.0] - 2025-12-14
 
 ### 🎉 Version initiale

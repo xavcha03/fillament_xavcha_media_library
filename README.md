@@ -12,6 +12,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - 🎯 **Gestion complète des médias** : Images, vidéos, documents, archives
 - 🔄 **Conversions d'images** : Génération automatique de thumbnails et variantes
 - 📁 **Collections** : Organisation des médias par type ou usage
+- 📂 **Gestion des dossiers** : Organisation hiérarchique des médias avec navigation par dossiers
 - 🎨 **Interface Filament native** : Composants intégrés pour Filament v4
 - 🔒 **Sécurité** : Support des fichiers publics et privés
 - 🚀 **Performance** : Optimisé pour les gros volumes
@@ -23,6 +24,8 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - ✅ **Validation intelligente** : Désactivation automatique du bouton valider si fichiers en attente
 - 🔄 **Synchronisation automatique** : Retour automatique à la bibliothèque après upload
 - 🗑️ **Suppression persistante** : Suppression avec croix rouge sauvegardée automatiquement
+- ⚡ **Actions configurables** : Système d'actions Filament modulaires (renommer, déplacer, télécharger, etc.)
+- 🎯 **Actions en masse** : Opérations groupées sur plusieurs fichiers
 
 ## 📋 Table des matières
 
@@ -74,6 +77,7 @@ Cela créera les tables suivantes :
 - `media_files` : Fichiers médias uniques
 - `media_attachments` : Associations entre fichiers et modèles
 - `media_conversions` : Conversions d'images générées
+- `media_folders` : Dossiers pour organiser les médias (nouveau)
 
 ### 2. Publier la configuration (optionnel)
 

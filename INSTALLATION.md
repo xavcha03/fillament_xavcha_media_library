@@ -69,6 +69,12 @@ php artisan vendor:publish --tag=media-library-pro-migrations
 php artisan migrate
 ```
 
+**Note** : Les migrations créent les tables suivantes :
+- `media_files` : Fichiers médias uniques
+- `media_attachments` : Associations entre fichiers et modèles
+- `media_conversions` : Conversions d'images générées
+- `media_folders` : Dossiers pour organiser les médias (nouveau)
+
 ### 2. Publier la configuration (optionnel)
 
 ```bash
