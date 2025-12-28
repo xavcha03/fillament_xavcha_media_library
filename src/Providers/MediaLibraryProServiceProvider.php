@@ -8,6 +8,8 @@ use Livewire\Livewire;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Assets\Css;
+use Filament\View\PanelsRenderHook;
+use Filament\Support\Facades\FilamentView;
 
 class MediaLibraryProServiceProvider extends ServiceProvider
 {
@@ -49,6 +51,12 @@ class MediaLibraryProServiceProvider extends ServiceProvider
             // Charger les routes après que l'application soit complètement chargée
             $this->loadRoutes();
         });
+
+        // Enregistrer le script Alpine de manière globale pour qu'il soit disponible même si le composant n'est pas encore rendu
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn () => view('media-library-pro::scripts.alpine-init')
+        );
     }
 
     public function register(): void
