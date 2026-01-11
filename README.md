@@ -12,7 +12,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - 🎯 **Gestion complète des médias** : Images, vidéos, documents, archives
 - 🔄 **Conversions d'images** : Génération automatique de thumbnails et variantes
 - 📁 **Collections** : Organisation des médias par type ou usage
-- 📂 **Gestion des dossiers** : Organisation hiérarchique des médias avec navigation par dossiers
+- 📂 **Gestion des dossiers** : Organisation hiérarchique des médias avec navigation par dossiers (création, navigation, upload dans un dossier)
 - 🎨 **Interface Filament native** : Composants intégrés pour Filament v4
 - 🔒 **Sécurité** : Support des fichiers publics et privés
 - 🚀 **Performance** : Optimisé pour les gros volumes
@@ -24,6 +24,8 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - ✅ **Validation intelligente** : Désactivation automatique du bouton valider si fichiers en attente
 - 🔄 **Synchronisation automatique** : Retour automatique à la bibliothèque après upload
 - 🗑️ **Suppression persistante** : Suppression avec croix rouge sauvegardée automatiquement
+- 📂 **Navigation par dossiers** : Accès aux dossiers dans le picker, création de dossiers, upload dans un dossier
+- 🎨 **Interface moderne** : Miniatures compactes, design soigné, responsive
 - ⚡ **Actions configurables** : Système d'actions Filament modulaires (renommer, déplacer, télécharger, etc.)
 - 🎯 **Actions en masse** : Opérations groupées sur plusieurs fichiers
 
@@ -47,6 +49,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - [Sécurité](#-sécurité)
 - [Dépannage](#-dépannage)
 - [🎨 Guide de Styling](#-guide-de-styling) - **Important pour le développement**
+- [🛠️ Développement](#️-développement) - Guide pour développer le package
 - [📚 Documentation](#-documentation)
 - [📋 Roadmap / TODO](#-roadmap--todo)
 - [Contribution](#-contribution)
@@ -680,6 +683,70 @@ $galleryImages = $article->getMediaFiles('gallery');
 $article->clearMediaCollection('gallery');
 ```
 
+### Dossiers
+
+Les dossiers permettent d'organiser les médias de manière hiérarchique, similaire à un système de fichiers.
+
+#### Utilisation dans MediaPickerUnified
+
+Les dossiers sont automatiquement disponibles dans le picker :
+
+- **Navigation** : Cliquez sur un dossier pour y naviguer
+- **Création** : Créez des dossiers depuis l'onglet Upload
+- **Upload dans un dossier** : Sélectionnez un dossier avant d'uploader des fichiers
+- **Breadcrumb** : Navigation facile avec retour à la racine
+
+#### Utilisation programmatique
+
+```php
+use Xavier\MediaLibraryPro\Models\MediaFolder;
+use Xavier\MediaLibraryPro\Services\MediaFolderService;
+
+$folderService = app(MediaFolderService::class);
+
+// Créer un dossier à la racine
+$folder = $folderService->create('Mon Dossier');
+
+// Créer un sous-dossier
+$subFolder = $folderService->create('Sous-dossier', $folder);
+
+// Récupérer les dossiers racine
+$rootFolders = $folderService->getRootFolders();
+
+// Récupérer les dossiers enfants
+$childFolders = $folderService->getChildFolders($folder);
+
+// Déplacer un dossier
+$folderService->move($subFolder, null); // Déplacer à la racine
+
+// Supprimer un dossier (et son contenu)
+$folderService->delete($folder);
+```
+
+#### Associer un média à un dossier
+
+```php
+// Lors de l'upload
+$mediaFile = $uploadService->upload($file);
+$mediaFile->folder_id = $folder->id;
+$mediaFile->save();
+
+// Ou via le modèle
+$mediaFile = MediaFile::find(1);
+$mediaFile->folder_id = $folder->id;
+$mediaFile->save();
+```
+
+#### Récupérer les médias d'un dossier
+
+```php
+// Médias dans un dossier spécifique
+$mediaInFolder = MediaFile::where('folder_id', $folder->id)->get();
+
+// Médias à la racine (sans dossier)
+$rootMedia = MediaFile::whereNull('folder_id')->get();
+```
+
 ## 📚 API de référence
 
 ### Modèle MediaFile
@@ -730,6 +797,7 @@ $mediaFile->getConversionUrl($name)           // URL d'une conversion (string|nu
 ```php
 $mediaFile->attachments                       // Collection<MediaAttachment>
 $mediaFile->conversions                       // Collection<MediaConversion>
+$mediaFile->folder                            // MediaFolder|null (dossier parent)
 ```
 
 ### Modèle MediaAttachment
@@ -784,6 +852,34 @@ $conversion->mediaFile        // MediaFile source
 ```php
 $conversion->getUrl()                         // URL de la conversion (string)
 $conversion->getPath()                        // Chemin physique (string)
+```
+
+### Modèle MediaFolder
+
+#### Propriétés
+
+```php
+$folder->name                 // Nom du dossier (string)
+$folder->path                 // Chemin complet du dossier (string)
+$folder->parent_id            // ID du dossier parent (int|null)
+$folder->created_at           // Date de création
+$folder->updated_at           // Date de mise à jour
+```
+
+#### Relations
+
+```php
+$folder->parent                // MediaFolder|null (dossier parent)
+$folder->children              // Collection<MediaFolder> (sous-dossiers)
+$folder->mediaFiles            // Collection<MediaFile> (fichiers dans le dossier)
+```
+
+#### Méthodes
+
+```php
+$folder->getFullPath()         // Chemin complet du dossier (string)
+$folder->moveTo($newParent)    // Déplacer vers un nouveau parent (bool)
+$folder->deleteWithContents()  // Supprimer avec son contenu (bool)
 ```
 
 ## 💡 Exemples avancés
@@ -1069,7 +1165,8 @@ Si vous modifiez les vues Blade ou ajoutez de nouvelles classes Tailwind, vous d
 1. **Définir manuellement toutes les classes** dans `resources/css/media-library-pro.css`
 2. **Recompiler les assets** après chaque modification :
    ```bash
-   ddev artisan view:clear && ddev artisan filament:assets
+   ddev exec php workbench/artisan view:clear
+   ddev exec php workbench/artisan filament:assets
    ```
 
 📖 **Voir le guide complet :** [STYLING.md](STYLING.md)
@@ -1080,6 +1177,28 @@ Si vous modifiez les vues Blade ou ajoutez de nouvelles classes Tailwind, vous d
 - ✅ Inclure les variantes dark mode, responsive, hover, focus
 - ✅ Échapper correctement les classes avec caractères spéciaux (`bg-black/70` → `.bg-black\/70`)
 
+## 🛠️ Développement
+
+Pour développer et tester le package localement, consultez le guide complet :
+
+📖 **[WORKBENCH.md](WORKBENCH.md)** - Configuration de l'environnement de développement avec ddev
+
+### Commandes utiles pour le développement
+
+```bash
+# Vider le cache des vues
+ddev exec php workbench/artisan view:clear
+
+# Recompiler les assets Filament
+ddev exec php workbench/artisan filament:assets
+
+# Publier les migrations
+ddev exec php workbench/artisan vendor:publish --tag=media-library-pro-migrations --force
+
+# Publier la configuration
+ddev exec php workbench/artisan vendor:publish --tag=media-library-pro-config --force
+```
+
 ## 📚 Documentation
 
 Ce package inclut une documentation complète organisée dans plusieurs fichiers :
@@ -1088,7 +1207,10 @@ Ce package inclut une documentation complète organisée dans plusieurs fichiers
 
 - **[README.md](README.md)** (ce fichier) - Vue d'ensemble et guide principal
 - **[INSTALLATION.md](INSTALLATION.md)** - Guide d'installation détaillé étape par étape
+- **[GUIDE_UTILISATION.md](GUIDE_UTILISATION.md)** - Guide complet d'utilisation de MediaPickerUnified avec exemples détaillés
+- **[METHODES_FLUENTES.md](METHODES_FLUENTES.md)** - Référence complète de l'API fluente pour MediaPickerUnified
 - **[STYLING.md](STYLING.md)** - Guide complet pour le styling et les classes Tailwind
+- **[WORKBENCH.md](WORKBENCH.md)** - Guide pour configurer l'environnement de développement avec ddev
 - **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions et changements
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide pour contribuer au projet
 - **[TODO.md](TODO.md)** - Liste des fonctionnalités à venir et améliorations prévues
@@ -1101,9 +1223,12 @@ Ce package inclut une documentation complète organisée dans plusieurs fichiers
 
 ```
 packages/xavcha/fillament-xavcha-media-library/
-├── README.md              # Documentation principale
-├── INSTALLATION.md        # Guide d'installation
+├── README.md              # Documentation principale (ce fichier)
+├── INSTALLATION.md        # Guide d'installation détaillé
+├── GUIDE_UTILISATION.md   # Guide complet d'utilisation avec exemples
+├── METHODES_FLUENTES.md   # Référence API fluente complète
 ├── STYLING.md             # Guide de styling Tailwind
+├── WORKBENCH.md           # Guide environnement de développement
 ├── CHANGELOG.md           # Historique des versions
 ├── CONTRIBUTING.md        # Guide de contribution
 ├── TODO.md                # Roadmap et fonctionnalités à venir
@@ -1114,7 +1239,10 @@ packages/xavcha/fillament-xavcha-media-library/
 ### 🔍 Navigation rapide
 
 - **Débutant ?** → Commencez par [INSTALLATION.md](INSTALLATION.md)
+- **Utiliser MediaPickerUnified ?** → Consultez [GUIDE_UTILISATION.md](GUIDE_UTILISATION.md)
+- **Besoin de la référence API ?** → Voir [METHODES_FLUENTES.md](METHODES_FLUENTES.md)
 - **Problème de style ?** → Consultez [STYLING.md](STYLING.md)
+- **Développement du package ?** → Lisez [WORKBENCH.md](WORKBENCH.md)
 - **Voulez contribuer ?** → Lisez [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Nouvelles fonctionnalités ?** → Voir [TODO.md](TODO.md)
 

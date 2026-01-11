@@ -335,6 +335,11 @@
                                             <span class="fi-ta-header-cell-label text-xs font-semibold text-gray-950 dark:text-white sm:text-sm">Date</span>
                                         </button>
                                     </th>
+                                    @if(!$pickerMode && !$selectMode)
+                                        <th scope="col" class="fi-ta-header-cell px-3 py-3.5 sm:px-6">
+                                            <span class="fi-ta-header-cell-label text-xs font-semibold text-gray-950 dark:text-white sm:text-sm">Actions</span>
+                                        </th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">
@@ -401,10 +406,25 @@
                                                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ $item->created_at->format('d/m/Y H:i') }}</span>
                                             </div>
                                         </td>
+                                        @if(!$pickerMode && !$selectMode)
+                                            <td class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
+                                                <div class="px-3 py-4 sm:px-6">
+                                                    <button
+                                                        type="button"
+                                                        wire:click="openDetailModal('{{ $item->uuid }}')"
+                                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all"
+                                                        title="Voir les détails"
+                                                    >
+                                                        <x-heroicon-o-eye class="w-4 h-4" />
+                                                        <span>Détails</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $selectMode ? '7' : '6' }}" class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
+                                        <td colspan="{{ $selectMode ? '7' : ($pickerMode ? '6' : '7') }}" class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
                                             <div class="px-3 py-12 sm:px-6 text-center">
                                                 <p class="text-sm text-gray-500 dark:text-gray-400">Aucun média trouvé</p>
                                             </div>
@@ -794,26 +814,44 @@
                     tabindex="-1"
                 >
                     @if($detailMedia)
-                        {{-- Header --}}
-                        <div class="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 px-6 py-5">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                                            <x-heroicon-o-photo class="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                        {{-- Header amélioré --}}
+                        <div class="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-primary-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 px-6 py-5">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500 dark:bg-primary-600 shadow-lg">
+                                            @if($detailMedia->isImage())
+                                                <x-heroicon-o-photo class="h-6 w-6 text-white" />
+                                            @elseif($detailMedia->isVideo())
+                                                <x-heroicon-o-video-camera class="h-6 w-6 text-white" />
+                                            @elseif($detailMedia->isAudio())
+                                                <x-heroicon-o-musical-note class="h-6 w-6 text-white" />
+                                            @else
+                                                <x-heroicon-o-document class="h-6 w-6 text-white" />
+                                            @endif
                                         </div>
-                                        <h3 id="media-detail-title" class="text-xl font-bold text-gray-900 dark:text-white">
-                                            Détails du média
-                                        </h3>
+                                        <div class="flex-1 min-w-0">
+                                            <h3 id="media-detail-title" class="text-xl font-bold text-gray-900 dark:text-white truncate">
+                                                {{ $detailMedia->file_name }}
+                                            </h3>
+                                            <div class="flex items-center gap-3 mt-1">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs font-medium">
+                                                    <x-heroicon-o-information-circle class="h-3.5 w-3.5" />
+                                                    {{ $detailMedia->getFormattedSize() }}
+                                                </span>
+                                                @if($detailMedia->isImage() && $detailMedia->width && $detailMedia->height)
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                        {{ $detailMedia->width }} × {{ $detailMedia->height }} px
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 ml-13">
-                                        {{ $detailMedia->file_name }}
-                                    </p>
                                 </div>
                                 <button
                                     type="button"
                                     wire:click="closeDetailModal"
-                                    class="rounded-lg p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+                                    class="flex-shrink-0 rounded-lg p-2 text-gray-400 hover:text-gray-700 hover:bg-white/50 dark:hover:bg-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
                                     aria-label="Fermer (Échap)"
                                     title="Fermer (Échap)"
                                 >
@@ -822,127 +860,162 @@
                             </div>
                         </div>
 
-                        {{-- Content --}}
+                        {{-- Content amélioré --}}
                         <div class="px-6 py-6 space-y-6 bg-white dark:bg-gray-800 overflow-y-auto" style="max-height: calc(90vh - 200px);">
-                            <div class="grid grid-cols-2 gap-6">
-                                {{-- Colonne gauche : Preview et Informations --}}
-                                <div class="space-y-4">
-                                    <div class="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {{-- Colonne gauche : Preview (plus large) --}}
+                                <div class="lg:col-span-2 space-y-4">
+                                    <div class="relative rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 shadow-lg">
                                         @if($detailMedia->isImage())
-                                            <img
-                                                src="{{ $this->getMediaImageUrl($detailMedia) }}"
-                                                alt="{{ $detailMedia->alt_text ?: $detailMedia->file_name }}"
-                                                class="w-full h-auto object-contain max-h-[500px] mx-auto"
-                                            />
+                                            <div class="flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 min-h-[400px]">
+                                                <img
+                                                    src="{{ $this->getMediaImageUrl($detailMedia) }}"
+                                                    alt="{{ $detailMedia->alt_text ?: $detailMedia->file_name }}"
+                                                    class="max-w-full max-h-[600px] object-contain"
+                                                />
+                                            </div>
                                         @else
-                                            <div class="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-800">
+                                            <div class="flex flex-col items-center justify-center h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                                                 @if($detailMedia->isVideo())
-                                                    <x-heroicon-o-video-camera class="h-16 w-16 text-gray-400" />
+                                                    <x-heroicon-o-video-camera class="h-24 w-24 text-gray-400 dark:text-gray-500 mb-4" />
+                                                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Fichier vidéo</p>
                                                 @elseif($detailMedia->isAudio())
-                                                    <x-heroicon-o-musical-note class="h-16 w-16 text-gray-400" />
+                                                    <x-heroicon-o-musical-note class="h-24 w-24 text-gray-400 dark:text-gray-500 mb-4" />
+                                                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Fichier audio</p>
                                                 @else
-                                                    <x-heroicon-o-document class="h-16 w-16 text-gray-400" />
+                                                    <x-heroicon-o-document class="h-24 w-24 text-gray-400 dark:text-gray-500 mb-4" />
+                                                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Document</p>
                                                 @endif
                                             </div>
                                         @endif
                                     </div>
 
-                                    {{-- Informations --}}
-                                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-3">
-                                        <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-3">Informations</h4>
-                                        <div class="space-y-2 text-sm">
-                                            <div class="flex justify-between">
-                                                <span class="text-gray-600 dark:text-gray-400">Taille :</span>
-                                                <span class="font-medium text-gray-900 dark:text-white">{{ $detailMedia->getFormattedSize() }}</span>
+                                    {{-- Informations détaillées --}}
+                                    <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <h4 class="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                            <x-heroicon-o-information-circle class="h-5 w-5 text-primary-500" />
+                                            <span>Informations détaillées</span>
+                                        </h4>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="space-y-1">
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Taille</p>
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $detailMedia->getFormattedSize() }}</p>
                                             </div>
                                             @if($detailMedia->isImage() && $detailMedia->width && $detailMedia->height)
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-600 dark:text-gray-400">Dimensions :</span>
-                                                    <span class="font-medium text-gray-900 dark:text-white">{{ $detailMedia->width }} × {{ $detailMedia->height }} px</span>
+                                                <div class="space-y-1">
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Dimensions</p>
+                                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $detailMedia->width }} × {{ $detailMedia->height }} px</p>
                                                 </div>
                                             @endif
-                                            <div class="flex justify-between">
-                                                <span class="text-gray-600 dark:text-gray-400">Type :</span>
-                                                <span class="font-medium text-gray-900 dark:text-white">{{ $detailMedia->mime_type }}</span>
+                                            <div class="space-y-1">
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Type MIME</p>
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-white break-all">{{ $detailMedia->mime_type }}</p>
                                             </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-gray-600 dark:text-gray-400">Créé le :</span>
-                                                <span class="font-medium text-gray-900 dark:text-white">{{ $detailMedia->created_at->format('d/m/Y H:i') }}</span>
+                                            <div class="space-y-1">
+                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Date de création</p>
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $detailMedia->created_at->format('d/m/Y H:i') }}</p>
                                             </div>
+                                            @if($detailMedia->folder)
+                                                <div class="space-y-1">
+                                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Dossier</p>
+                                                    <p class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                                                        <x-heroicon-o-folder class="h-4 w-4" />
+                                                        {{ $detailMedia->folder->name }}
+                                                    </p>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- Colonne droite : Formulaire --}}
+                                {{-- Colonne droite : Formulaire et Actions --}}
                                 <div class="space-y-6">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                                            Texte alternatif (Alt)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            wire:model="detailAltText"
-                                            placeholder="Décrivez l'image pour l'accessibilité"
-                                            class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
-                                        />
-                                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                                            💡 Le texte alternatif améliore l'accessibilité et le SEO.
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                                            Description
-                                        </label>
-                                        <textarea
-                                            wire:model="detailDescription"
-                                            rows="4"
-                                            placeholder="Description optionnelle du média"
-                                            class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
-                                        ></textarea>
-                                    </div>
-
-                                    {{-- Section Actions --}}
-                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-                                        <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                            <x-heroicon-o-bolt class="h-4 w-4 text-primary-500" />
-                                            <span>Actions rapides</span>
+                                    {{-- Formulaire --}}
+                                    <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <h4 class="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                            <x-heroicon-o-pencil-square class="h-5 w-5 text-primary-500" />
+                                            <span>Métadonnées</span>
                                         </h4>
-                                        <div class="grid grid-cols-2 gap-3">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                                    Texte alternatif (Alt)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    wire:model="detailAltText"
+                                                    placeholder="Décrivez l'image pour l'accessibilité"
+                                                    class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium"
+                                                />
+                                                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    Améliore l'accessibilité et le SEO
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                                    Description
+                                                </label>
+                                                <textarea
+                                                    wire:model="detailDescription"
+                                                    rows="4"
+                                                    placeholder="Description optionnelle du média"
+                                                    class="fi-input block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:text-sm px-4 py-2.5 font-medium resize-none"
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Section Actions améliorée --}}
+                                    <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <h4 class="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                            <x-heroicon-o-bolt class="h-5 w-5 text-primary-500" />
+                                            <span>Actions</span>
+                                        </h4>
+                                        <div class="space-y-2">
                                             @if(config('media-library-pro.actions.rename', true))
                                                 <button
                                                     type="button"
                                                     wire:click="openRenameModal"
-                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900/20 hover:border-warning-400 dark:hover:border-warning-600 hover:bg-warning-100 dark:hover:bg-warning-900/40 transition-all"
+                                                    class="w-full group flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900/20 hover:border-warning-400 dark:hover:border-warning-600 hover:bg-warning-100 dark:hover:bg-warning-900/40 transition-all text-left"
                                                 >
-                                                    <div class="p-2 rounded-lg bg-warning-500 dark:bg-warning-600 group-hover:scale-110 transition-transform">
+                                                    <div class="flex-shrink-0 p-2 rounded-lg bg-warning-500 dark:bg-warning-600 group-hover:scale-110 transition-transform">
                                                         <x-heroicon-o-pencil class="h-5 w-5 text-white" />
                                                     </div>
-                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Renommer</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">Renommer</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Modifier le nom du fichier</p>
+                                                    </div>
                                                 </button>
                                             @endif
                                             @if(config('media-library-pro.actions.download', true))
                                                 <a
                                                     href="{{ route('media-library-pro.download', ['media' => $detailMedia->uuid]) }}"
                                                     target="_blank"
-                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/20 hover:border-success-400 dark:hover:border-success-600 hover:bg-success-100 dark:hover:bg-success-900/40 transition-all"
+                                                    class="w-full group flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/20 hover:border-success-400 dark:hover:border-success-600 hover:bg-success-100 dark:hover:bg-success-900/40 transition-all text-left"
                                                 >
-                                                    <div class="p-2 rounded-lg bg-success-500 dark:bg-success-600 group-hover:scale-110 transition-transform">
+                                                    <div class="flex-shrink-0 p-2 rounded-lg bg-success-500 dark:bg-success-600 group-hover:scale-110 transition-transform">
                                                         <x-heroicon-o-arrow-down-tray class="h-5 w-5 text-white" />
                                                     </div>
-                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Télécharger</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">Télécharger</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Télécharger le fichier</p>
+                                                    </div>
                                                 </a>
                                             @endif
                                             @if(config('media-library-pro.actions.move', true) && config('media-library-pro.folders.enabled', true))
                                                 <button
                                                     type="button"
                                                     wire:click="openMoveModal"
-                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/20 hover:border-info-400 dark:hover:border-info-600 hover:bg-info-100 dark:hover:bg-info-900/40 transition-all"
+                                                    class="w-full group flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/20 hover:border-info-400 dark:hover:border-info-600 hover:bg-info-100 dark:hover:bg-info-900/40 transition-all text-left"
                                                 >
-                                                    <div class="p-2 rounded-lg bg-info-500 dark:bg-info-600 group-hover:scale-110 transition-transform">
+                                                    <div class="flex-shrink-0 p-2 rounded-lg bg-info-500 dark:bg-info-600 group-hover:scale-110 transition-transform">
                                                         <x-heroicon-o-arrow-right-circle class="h-5 w-5 text-white" />
                                                     </div>
-                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Déplacer</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">Déplacer</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Changer de dossier</p>
+                                                    </div>
                                                 </button>
                                             @endif
                                             @if(config('media-library-pro.actions.delete', true))
@@ -950,21 +1023,24 @@
                                                     type="button"
                                                     wire:click="deleteMedia('{{ $detailMedia->uuid }}')"
                                                     wire:confirm="Êtes-vous sûr de vouloir supprimer ce fichier ?"
-                                                    class="group flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/20 hover:border-danger-400 dark:hover:border-danger-600 hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-all"
+                                                    class="w-full group flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/20 hover:border-danger-400 dark:hover:border-danger-600 hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-all text-left"
                                                 >
-                                                    <div class="p-2 rounded-lg bg-danger-500 dark:bg-danger-600 group-hover:scale-110 transition-transform">
+                                                    <div class="flex-shrink-0 p-2 rounded-lg bg-danger-500 dark:bg-danger-600 group-hover:scale-110 transition-transform">
                                                         <x-heroicon-o-trash class="h-5 w-5 text-white" />
                                                     </div>
-                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">Supprimer</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">Supprimer</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Supprimer définitivement</p>
+                                                    </div>
                                                 </button>
                                             @endif
                                         </div>
                                         @if($detailMedia->isImage())
-                                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                                                 <button
                                                     type="button"
                                                     disabled
-                                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium cursor-not-allowed opacity-50 text-sm"
+                                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium cursor-not-allowed opacity-60 text-sm"
                                                 >
                                                     <x-heroicon-o-arrow-path class="h-4 w-4" />
                                                     <span>Compresser (bientôt)</span>
@@ -976,32 +1052,34 @@
                             </div>
                         </div>
 
-                        {{-- Footer --}}
-                        <div class="border-t-2 border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 px-6 py-5">
-                            <div class="flex items-center justify-end gap-3">
-                                <x-filament::button
-                                    wire:click="closeDetailModal"
-                                    color="gray"
-                                    outlined
-                                    size="sm"
-                                >
-                                    Annuler
-                                </x-filament::button>
-                                <x-filament::button
-                                    wire:click="updateMediaDetails"
-                                    color="primary"
-                                    size="sm"
-                                    class="font-semibold"
-                                >
-                                    <x-slot name="icon">
-                                        <x-heroicon-o-check class="h-4 w-4" />
-                                    </x-slot>
-                                    Enregistrer
-                                </x-filament::button>
+                        {{-- Footer amélioré --}}
+                        <div class="border-t-2 border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-gray-900/50 dark:via-gray-800 dark:to-gray-800 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    💡 <kbd class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-mono font-semibold">Ctrl+Entrée</kbd> pour enregistrer • <kbd class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-mono font-semibold">Échap</kbd> pour fermer
+                                </p>
+                                <div class="flex items-center gap-3">
+                                    <x-filament::button
+                                        wire:click="closeDetailModal"
+                                        color="gray"
+                                        outlined
+                                        size="sm"
+                                    >
+                                        Annuler
+                                    </x-filament::button>
+                                    <x-filament::button
+                                        wire:click="updateMediaDetails"
+                                        color="primary"
+                                        size="sm"
+                                        class="font-semibold shadow-md"
+                                    >
+                                        <x-slot name="icon">
+                                            <x-heroicon-o-check class="h-4 w-4" />
+                                        </x-slot>
+                                        Enregistrer
+                                    </x-filament::button>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                                💡 Appuyez sur <kbd class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-mono font-semibold">Ctrl+Entrée</kbd> pour enregistrer rapidement
-                            </p>
                         </div>
                     @endif
                 </div>

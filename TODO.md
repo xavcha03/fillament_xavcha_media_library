@@ -2,6 +2,26 @@
 
 Ce document liste les fonctionnalités prévues, améliorations et tâches à venir pour le package Media Library Pro.
 
+> **Note** : Les éléments marqués avec ✅ **FAIT** sont déjà implémentés et fonctionnels.
+
+## ✅ Déjà Implémenté
+
+### Fonctionnalités de base
+- ✅ **Gestion des dossiers** : Navigation, création, upload dans un dossier, breadcrumb
+- ✅ **Modale de détail** : Affichage des détails d'un média (accessible depuis la grille)
+- ✅ **Tri par colonne** : Tri par nom, type, collection, taille, date dans la vue liste
+- ✅ **Sélection multiple** : Mode sélection avec checkboxes dans les deux vues
+- ✅ **Lazy loading** : Images chargées en lazy loading (`loading="lazy"`)
+- ✅ **Eager loading** : Prévention N+1 avec `->with(['attachments', 'folder'])`
+- ✅ **Index de base de données** : Index sur les colonnes fréquemment filtrées
+- ✅ **Colonne order** : Support de l'ordre dans MediaAttachment (géré automatiquement)
+- ✅ **Vue grille et liste** : Deux modes d'affichage avec basculement
+- ✅ **Filtres avancés** : Filtrage par collection, type MIME, date, taille
+- ✅ **Upload avec prévisualisation** : Aperçu des fichiers avant upload
+- ✅ **Gestion des collections** : Organisation par collections
+- ✅ **Conversions d'images** : Génération de thumbnails et variantes
+- ✅ **Interface moderne** : Design soigné avec miniatures compactes
+
 ## 🎯 Priorité Haute
 
 ### 1. Compression d'images ⚡
@@ -31,11 +51,11 @@ Ce document liste les fonctionnalités prévues, améliorations et tâches à ve
 - `src/Livewire/MediaLibrary.php` (méthode `getMediaQuery()` - ajouter filtre recherche)
 
 ### 3. Vue liste améliorée 📋
-- [ ] Ouvrir la modale de détail depuis la vue liste (actuellement uniquement en grille)
+- [ ] Ouvrir la modale de détail depuis la vue liste (actuellement uniquement en grille) - **À FAIRE** : La modale est accessible depuis la grille mais pas depuis la liste
 - [ ] Actions rapides (supprimer, modifier) directement dans la liste
 - [ ] Colonnes personnalisables
-- [ ] Tri par colonne
-- [ ] Sélection multiple améliorée
+- [x] Tri par colonne ✅ **FAIT** - Tri disponible par nom, type, collection, taille, date (boutons cliquables dans les en-têtes)
+- [x] Sélection multiple améliorée ✅ **FAIT** - Sélection multiple avec selectMode implémentée (checkboxes dans la vue liste)
 
 **Fichiers concernés :**
 - `resources/views/livewire/media-library.blade.php` (section vue liste)
@@ -44,15 +64,16 @@ Ce document liste les fonctionnalités prévues, améliorations et tâches à ve
 ## 🎨 Améliorations UX/UI
 
 ### 4. Drag & drop pour réorganiser 🎯
-- [ ] Réorganiser les médias dans une collection par glisser-déposer
-- [ ] Modifier l'ordre d'affichage
-- [ ] Feedback visuel pendant le drag
-- [ ] Sauvegarde automatique de l'ordre
+- [ ] Réorganiser les médias dans une collection par glisser-déposer - **À FAIRE** : Interface drag & drop manquante (la propriété `allowReordering` existe mais pas l'implémentation)
+- [x] Modifier l'ordre d'affichage ✅ **FAIT** - Colonne `order` existe dans MediaAttachment, ordre géré automatiquement
+- [ ] Feedback visuel pendant le drag - **À FAIRE** : Nécessite l'implémentation du drag & drop
+- [x] Sauvegarde automatique de l'ordre ✅ **FAIT** - L'ordre est géré automatiquement lors de l'ajout via `maxOrder + 1`
+- [x] Infrastructure prête ✅ **FAIT** - `allowReordering()` existe dans MediaPickerUnified, colonne `order` en base
 
 **Fichiers concernés :**
-- `src/Livewire/MediaLibrary.php` (méthode `reorderMedia()`)
-- `resources/views/livewire/media-library.blade.php` (ajouter drag & drop)
-- `src/Models/MediaAttachment.php` (ajouter colonne `order`)
+- `src/Livewire/MediaLibrary.php` (méthode `reorderMedia()` - À IMPLÉMENTER)
+- `resources/views/livewire/media-library.blade.php` (ajouter drag & drop - À IMPLÉMENTER)
+- `src/Models/MediaAttachment.php` (colonne `order` ✅ DÉJÀ PRÉSENTE)
 
 ### 5. Prévisualisation améliorée 🖼️
 - [ ] Lightbox pour les images en grand format
@@ -118,7 +139,7 @@ Ce document liste les fonctionnalités prévues, améliorations et tâches à ve
 ## ⚡ Performance et optimisation
 
 ### 10. Lazy loading et pagination infinie ♾️
-- [ ] Lazy loading des images dans la grille
+- [x] Lazy loading des images dans la grille ✅ **FAIT** - `loading="lazy"` sur les images
 - [ ] Pagination infinie (scroll infini)
 - [ ] Cache des conversions
 - [ ] Préchargement intelligent des images
@@ -128,10 +149,10 @@ Ce document liste les fonctionnalités prévues, améliorations et tâches à ve
 - `src/Livewire/MediaLibrary.php` (pagination infinie)
 
 ### 11. Optimisation des requêtes 🔧
-- [ ] Eager loading pour éviter N+1
-- [ ] Index sur les colonnes fréquemment filtrées
-- [ ] Cache des résultats de filtres
-- [ ] Requêtes optimisées avec `select()` spécifique
+- [x] Eager loading pour éviter N+1 ✅ **FAIT** - `->with(['attachments', 'folder'])` dans getMediaProperty()
+- [x] Index sur les colonnes fréquemment filtrées ✅ **FAIT** - Index présents dans les migrations (media_file_id, collection_name, order, etc.)
+- [ ] Cache des résultats de filtres - **À FAIRE** : Pas encore implémenté
+- [ ] Requêtes optimisées avec `select()` spécifique - **À FAIRE** : Pourrait améliorer les performances
 
 **Fichiers concernés :**
 - `src/Livewire/MediaLibrary.php` (méthode `getMediaQuery()`)
@@ -285,7 +306,36 @@ Ce document liste les fonctionnalités prévues, améliorations et tâches à ve
 
 ---
 
-## 📝 Notes
+## 📊 Récapitulatif
+
+### ✅ Fonctionnalités Implémentées (Partiellement ou Complètement)
+
+1. **Gestion des dossiers** ✅ - Navigation, création, upload dans un dossier, breadcrumb
+2. **Tri par colonne** ✅ - Dans la vue liste (nom, type, collection, taille, date)
+3. **Sélection multiple** ✅ - Mode sélection avec checkboxes
+4. **Lazy loading** ✅ - Images chargées en lazy loading
+5. **Eager loading** ✅ - Prévention N+1 avec relations chargées
+6. **Index de base de données** ✅ - Index sur colonnes fréquemment utilisées
+7. **Colonne order** ✅ - Support de l'ordre dans MediaAttachment
+8. **Modale de détail** ✅ - Accessible depuis la vue grille (pas encore depuis la liste)
+9. **Filtres avancés** ✅ - Par collection, type MIME, date, taille
+10. **Upload avec prévisualisation** ✅ - Aperçu avant upload
+11. **Vue grille et liste** ✅ - Deux modes d'affichage
+
+### ❌ Fonctionnalités Non Implémentées (Priorité Haute)
+
+1. **Recherche en temps réel** - Barre de recherche manquante
+2. **Compression d'images** - Service de compression non créé
+3. **Navigation précédent/suivant** - Dans la modale de détail
+4. **Lightbox** - Pour les images en grand format
+5. **Zoom et rotation** - Sur les images
+6. **Drag & drop réorganisation** - Interface manquante (ordre existe mais pas l'UI)
+7. **Métadonnées EXIF** - Extraction et affichage
+8. **Système de tags** - Non implémenté
+9. **Duplication de médias** - Non implémenté
+10. **Watermarking** - Non implémenté
+
+### 📝 Notes
 
 - Les fonctionnalités sont organisées par priorité et catégorie
 - Chaque item peut être développé indépendamment
