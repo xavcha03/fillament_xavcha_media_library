@@ -30,6 +30,27 @@
                 return this.baseUrl + mediaId;
             },
             
+            isImage(mediaId) {
+                const file = this.selectedFiles[mediaId];
+                if (!file) return false;
+                
+                // Vérifier par extension du nom de fichier
+                if (file.file_name) {
+                    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico'];
+                    const fileName = file.file_name.toLowerCase();
+                    return imageExtensions.some(ext => fileName.endsWith(ext));
+                }
+                
+                // Vérifier par extension de l'URL
+                if (file.url) {
+                    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico'];
+                    const url = file.url.toLowerCase();
+                    return imageExtensions.some(ext => url.includes(ext));
+                }
+                
+                return false;
+            },
+            
             init() {
                 // S'assurer que les IDs dans selected sont des entiers pour correspondre aux clés de selectedFiles
                 this.selected = this.selected.map(id => parseInt(id));

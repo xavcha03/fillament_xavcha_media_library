@@ -6,7 +6,9 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Xavier\MediaLibraryPro\Models\MediaFile;
+use Xavier\MediaLibraryPro\Models\MediaFolder;
 use Xavier\MediaLibraryPro\Services\MediaUploadService;
+use Xavier\MediaLibraryPro\Services\MediaFolderService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -27,10 +29,16 @@ class MediaLibraryPicker extends Component
     public $uploadedFiles = [];
     public bool $isUploading = false;
     public string $uploadCollection = 'default';
+    public ?int $uploadFolderId = null; // Dossier pour l'upload
+    public ?int $currentFolderId = null; // Dossier actuel pour la navigation
+    public bool $showCreateFolderModal = false;
+    public string $folderName = '';
+    public ?int $folderParentId = null;
     public array $data = []; // Propriété pour éviter l'erreur Livewire PublicPropertyNotFoundException
 
     protected $queryString = [
         'uploadMode' => ['except' => false],
+        'currentFolderId' => ['except' => null],
     ];
 
     public function mount(
@@ -105,6 +113,12 @@ class MediaLibraryPicker extends Component
                     'name' => $file->getClientOriginalName(),
                 ]);
 
+                // Associer le fichier au dossier sélectionné si un dossier est choisi
+                if ($this->uploadFolderId !== null) {
+                    $mediaFile->folder_id = $this->uploadFolderId;
+                    $mediaFile->save();
+                }
+
                 // Dispatch event avec les infos complètes du fichier
                 // Les événements Livewire sont dispatchés globalement par défaut
                 // Inclure statePath pour isoler les instances
@@ -154,6 +168,14 @@ class MediaLibraryPicker extends Component
     protected function getMediaQuery()
     {
         $query = MediaFile::query();
+
+        // Filtre par dossier si on est dans un dossier
+        if ($this->currentFolderId !== null) {
+            $query->where('folder_id', $this->currentFolderId);
+        } else {
+            // Si on est à la racine, afficher uniquement les fichiers sans dossier
+            $query->whereNull('folder_id');
+        }
 
         // Filtre par collection si spécifié ET si l'utilisateur a changé le filtre manuellement
         // Par défaut, on affiche TOUS les médias (même ceux sans attachments)
@@ -207,6 +229,127 @@ class MediaLibraryPicker extends Component
             unset($this->uploadedFiles[$index]);
             $this->uploadedFiles = array_values($this->uploadedFiles);
         }
+    }
+
+    public function clearUploadedFiles(): void
+    {
+        $this->uploadedFiles = [];
+    }
+
+    public function getTotalFileSize(): string
+    {
+        $totalSize = 0;
+        foreach ($this->uploadedFiles as $file) {
+            if (method_exists($file, 'getSize')) {
+                $totalSize += $file->getSize();
+            }
+        }
+        return number_format($totalSize / 1024 / 1024, 2);
+    }
+
+    public function getFileValidationErrors(): array
+    {
+        $errors = [];
+        foreach ($this->uploadedFiles as $index => $file) {
+            if (method_exists($file, 'getMimeType')) {
+                $mimeType = $file->getMimeType();
+                $maxSize = config('media-library-pro.validation.max_size', 10240) * 1024; // En bytes
+                
+                if (method_exists($file, 'getSize') && $file->getSize() > $maxSize) {
+                    $errors[$index] = 'Fichier trop volumineux (max ' . (config('media-library-pro.validation.max_size', 10240)) . ' KB)';
+                }
+            }
+        }
+        return $errors;
+    }
+
+    public function openCreateFolderModal(): void
+    {
+        $this->showCreateFolderModal = true;
+        $this->folderName = '';
+        $this->folderParentId = $this->uploadFolderId;
+    }
+
+    public function closeCreateFolderModal(): void
+    {
+        $this->showCreateFolderModal = false;
+        $this->folderName = '';
+        $this->folderParentId = null;
+    }
+
+    public function createFolder(): void
+    {
+        $this->validate([
+            'folderName' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (preg_match('/[<>:"|?*\/\\\\]/', $value)) {
+                        $fail('Le nom du dossier contient des caractères interdits (< > : " | ? * / \\)');
+                    }
+                },
+            ],
+        ], [
+            'folderName.required' => 'Le nom du dossier est requis',
+        ]);
+
+        try {
+            $folderService = app(MediaFolderService::class);
+            $parent = $this->folderParentId ? MediaFolder::find($this->folderParentId) : null;
+            $folder = $folderService->create($this->folderName, $parent);
+            
+            // Sélectionner automatiquement le nouveau dossier créé
+            $this->uploadFolderId = $folder->id;
+            
+            $this->closeCreateFolderModal();
+            
+            session()->flash('notify', [
+                'type' => 'success',
+                'message' => "Le dossier '{$folder->name}' a été créé avec succès",
+            ]);
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function getRootFoldersProperty()
+    {
+        $folderService = app(MediaFolderService::class);
+        return $folderService->getRootFolders();
+    }
+
+    /**
+     * Navigue vers un dossier
+     */
+    public function navigateToFolder(?int $folderId): void
+    {
+        $this->currentFolderId = $folderId;
+        $this->resetPage();
+    }
+
+    /**
+     * Récupère le dossier actuel
+     */
+    public function getCurrentFolderProperty(): ?MediaFolder
+    {
+        if ($this->currentFolderId === null) {
+            return null;
+        }
+        
+        return MediaFolder::find($this->currentFolderId);
+    }
+
+    /**
+     * Récupère les dossiers enfants du dossier actuel
+     */
+    public function getChildFoldersProperty()
+    {
+        $folderService = app(MediaFolderService::class);
+        return $folderService->getChildFolders($this->currentFolder);
     }
 
     public function render()

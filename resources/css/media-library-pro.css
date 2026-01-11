@@ -1138,6 +1138,14 @@ kbd {
     height: 4rem;
 }
 
+.w-32 {
+    width: 8rem;
+}
+
+.h-32 {
+    height: 8rem;
+}
+
 /* Object fit */
 .object-cover {
     object-fit: cover;
@@ -1286,6 +1294,14 @@ kbd {
 
 .w-6 {
     width: 1.5rem;
+}
+
+.h-7 {
+    height: 1.75rem;
+}
+
+.w-7 {
+    width: 1.75rem;
 }
 
 .h-5 {
