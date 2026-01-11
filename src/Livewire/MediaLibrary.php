@@ -18,7 +18,7 @@ class MediaLibrary extends Component
     use WithPagination;
     use WithFileUploads;
 
-    public string $view = 'grid';
+    public string $view = 'list';
     public array $filters = [];
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
@@ -45,7 +45,7 @@ class MediaLibrary extends Component
     public ?int $moveFolderId = null;
 
     protected $queryString = [
-        'view' => ['except' => 'grid'],
+        'view' => ['except' => 'list'],
         'sortBy' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
         'currentFolderId' => ['except' => null],
@@ -57,11 +57,8 @@ class MediaLibrary extends Component
         $this->multiple = $multiple;
         $this->acceptedTypes = $acceptedTypes;
         
-        if (!$pickerMode) {
-            $this->view = Session::get('media-library-view', config('media-library-pro.view.default', 'grid'));
-        } else {
-            $this->view = 'grid';
-        }
+        // Toujours commencer en mode liste par défaut
+        $this->view = 'list';
         
         $this->sortBy = config('media-library-pro.sorters.default', 'created_at');
         $this->sortDirection = config('media-library-pro.sorters.direction', 'desc');
@@ -70,6 +67,24 @@ class MediaLibrary extends Component
     public function toggleView(): void
     {
         $this->view = $this->view === 'grid' ? 'list' : 'grid';
+        
+        if (config('media-library-pro.view.remember', true)) {
+            Session::put('media-library-view', $this->view);
+        }
+    }
+
+    public function setGridView(): void
+    {
+        $this->view = 'grid';
+        
+        if (config('media-library-pro.view.remember', true)) {
+            Session::put('media-library-view', $this->view);
+        }
+    }
+
+    public function setListView(): void
+    {
+        $this->view = 'list';
         
         if (config('media-library-pro.view.remember', true)) {
             Session::put('media-library-view', $this->view);
@@ -606,6 +621,12 @@ class MediaLibrary extends Component
                 $mediaFile = $mediaUploadService->upload($file, [
                     'name' => $file->getClientOriginalName(),
                 ]);
+
+                // Associer le fichier au dossier courant si on est dans un dossier
+                if ($this->currentFolderId !== null) {
+                    $mediaFile->folder_id = $this->currentFolderId;
+                    $mediaFile->save();
+                }
 
                 $uploadedCount++;
             } catch (\Exception $e) {

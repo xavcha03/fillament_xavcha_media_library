@@ -148,7 +148,7 @@
             ></div>
 
             {{-- Modal Content --}}
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0" style="position: relative; z-index: 1;">
+            <div class="flex items-center justify-center px-4 py-4 text-center sm:block sm:p-0" style="position: relative; z-index: 1; min-height: 100%;">
                 <div
                     x-show="open"
                     x-transition:enter="ease-out duration-300"
@@ -157,13 +157,13 @@
                     x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full modal-content-bg"
+                    class="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full modal-content-bg flex flex-col max-h-[90vh]"
                     style="position: relative; z-index: 2;"
                     @click.stop
                 >
-                    <div class="px-4 pt-5 pb-4 sm:p-6 modal-content-bg">
+                    <div class="px-4 pt-5 pb-4 sm:p-6 modal-content-bg flex flex-col flex-1 min-h-0">
                         {{-- Header --}}
-                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 {{ $isMultiple ? 'Sélectionner des médias' : 'Sélectionner un média' }}
                             </h3>
@@ -181,7 +181,7 @@
 
                         {{-- Tabs --}}
                         @if($showUpload && $showLibrary)
-                            <div class="flex space-x-1 mb-4 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex space-x-1 mb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                                 <button
                                     type="button"
                                     x-on:click="activeTab = 'library'"
@@ -202,7 +202,7 @@
                         @endif
 
                         {{-- Tab Content --}}
-                        <div class="max-h-[70vh] overflow-y-auto">
+                        <div class="flex-1 overflow-y-auto min-h-0">
                             {{-- Library Tab --}}
                             <div x-show="showLibrary && (!showUpload || activeTab === 'library')" x-transition>
                                 @livewire('media-library-pro::media-library-picker', [
@@ -230,7 +230,7 @@
                         </div>
 
                         {{-- Footer Actions --}}
-                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 flex-shrink-0">
                             <x-filament::button
                                 type="button"
                                 x-on:click="open = false"

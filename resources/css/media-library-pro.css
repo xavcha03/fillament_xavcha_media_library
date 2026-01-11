@@ -303,6 +303,10 @@
     max-width: 56rem;
 }
 
+.max-w-5xl {
+    max-width: 64rem;
+}
+
 /* Z-index */
 .z-40 {
     z-index: 40;
@@ -385,6 +389,18 @@
 
 .items-start {
     align-items: flex-start;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+.min-h-0 {
+    min-height: 0;
+}
+
+.max-h-\[90vh\] {
+    max-height: 90vh;
 }
 
 /* Text colors dark mode */
