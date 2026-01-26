@@ -64,12 +64,31 @@ class MediaStorageService
             }
         }
 
-        // Extraire les dimensions si c'est une image
+        // Optimiser l'image si c'est une image et que l'optimisation est activée
+        if (str_starts_with($mimeType, 'image/')) {
+            try {
+                $optimizationService = app(ImageOptimizationService::class);
+                $newPath = $optimizationService->optimize($fullPath, $mimeType, $disk);
+                
+                // Si l'image a été convertie en WebP, mettre à jour le chemin et le type MIME
+                if ($newPath) {
+                    $fullPath = $newPath;
+                    $mimeType = 'image/webp';
+                    $extension = 'webp';
+                    $storedName = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $storedName);
+                }
+            } catch (\Exception $e) {
+                // Ignorer les erreurs d'optimisation, continuer avec le fichier original
+            }
+        }
+
+        // Extraire les dimensions si c'est une image (après optimisation)
         $width = null;
         $height = null;
         if (str_starts_with($mimeType, 'image/')) {
             try {
-                $imageInfo = getimagesize($file instanceof UploadedFile ? $file->getRealPath() : $file);
+                $absolutePath = $storage->path($fullPath);
+                $imageInfo = getimagesize($absolutePath);
                 if ($imageInfo) {
                     $width = $imageInfo[0];
                     $height = $imageInfo[1];
@@ -77,6 +96,11 @@ class MediaStorageService
             } catch (\Exception $e) {
                 // Ignorer les erreurs d'extraction
             }
+        }
+
+        // Mettre à jour la taille après optimisation
+        if ($storage->exists($fullPath)) {
+            $size = $storage->size($fullPath);
         }
 
         // Créer le MediaFile

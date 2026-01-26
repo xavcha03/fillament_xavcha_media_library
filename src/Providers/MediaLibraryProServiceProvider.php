@@ -57,6 +57,13 @@ class MediaLibraryProServiceProvider extends ServiceProvider
             PanelsRenderHook::HEAD_END,
             fn () => view('media-library-pro::scripts.alpine-init')
         );
+
+        // Enregistrer les commandes Artisan
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Xavier\MediaLibraryPro\Commands\OptimizeImagesCommand::class,
+            ]);
+        }
     }
 
     public function register(): void
@@ -84,6 +91,7 @@ class MediaLibraryProServiceProvider extends ServiceProvider
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaUploadService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaConversionService::class);
         $this->app->singleton(\Xavier\MediaLibraryPro\Services\MediaFolderService::class);
+        $this->app->singleton(\Xavier\MediaLibraryPro\Services\ImageOptimizationService::class);
     }
 
     protected function loadRoutes(): void

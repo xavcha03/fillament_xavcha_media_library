@@ -9,6 +9,7 @@ use Xavier\MediaLibraryPro\Models\MediaFile;
 use Xavier\MediaLibraryPro\Models\MediaFolder;
 use Xavier\MediaLibraryPro\Services\MediaUploadService;
 use Xavier\MediaLibraryPro\Services\MediaFolderService;
+use Xavier\MediaLibraryPro\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -474,6 +475,68 @@ class MediaLibrary extends Component
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Optimise une image existante
+     */
+    public function optimizeImage(string $mediaUuid): void
+    {
+        try {
+            $mediaFile = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
+            
+            if (!$mediaFile->isImage()) {
+                session()->flash('notify', [
+                    'type' => 'error',
+                    'message' => 'Seules les images peuvent être optimisées',
+                ]);
+                return;
+            }
+
+            $originalSize = $mediaFile->size;
+            $optimizationService = app(ImageOptimizationService::class);
+            
+            $success = $optimizationService->optimizeMediaFile($mediaFile);
+            
+            if ($success) {
+                $newSize = $mediaFile->fresh()->size;
+                $savedBytes = $originalSize - $newSize;
+                $savedPercent = $originalSize > 0 ? round(($savedBytes / $originalSize) * 100, 1) : 0;
+                $savedSize = $this->formatBytes($savedBytes);
+                
+                // Rafraîchir les données dans la modale
+                $this->detailMedia = $mediaFile->fresh();
+                
+                session()->flash('notify', [
+                    'type' => 'success',
+                    'message' => "Image optimisée avec succès ! Taille réduite de {$savedSize} ({$savedPercent}%)",
+                ]);
+            } else {
+                session()->flash('notify', [
+                    'type' => 'error',
+                    'message' => 'Erreur lors de l\'optimisation de l\'image',
+                ]);
+            }
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => 'Erreur : ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Formate les bytes en format lisible
+     */
+    protected function formatBytes(int $bytes, int $precision = 2): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, $precision) . ' ' . $units[$i];
     }
 
     /**

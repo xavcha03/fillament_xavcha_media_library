@@ -11,6 +11,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 
 - 🎯 **Gestion complète des médias** : Images, vidéos, documents, archives
 - 🔄 **Conversions d'images** : Génération automatique de thumbnails et variantes
+- ⚡ **Optimisation automatique** : Compression et redimensionnement automatiques des images uploadées
 - 📁 **Collections** : Organisation des médias par type ou usage
 - 📂 **Gestion des dossiers** : Organisation hiérarchique des médias avec navigation par dossiers (création, navigation, upload dans un dossier)
 - 🎨 **Interface Filament native** : Composants intégrés pour Filament v4
@@ -102,6 +103,68 @@ Si vous souhaitez utiliser Intervention Image pour les conversions :
 composer require intervention/image
 ```
 
+### 5. Installer les outils d'optimisation d'images (recommandé)
+
+Pour activer l'optimisation automatique des images (compression, redimensionnement), installez les outils système suivants sur votre serveur :
+
+#### Ubuntu/Debian
+
+```bash
+sudo apt-get update
+sudo apt-get install jpegoptim optipng pngquant webp gifsicle
+```
+
+#### CentOS/RHEL/Fedora
+
+```bash
+# Pour CentOS/RHEL (avec EPEL)
+sudo yum install epel-release
+sudo yum install jpegoptim optipng pngquant libwebp-tools gifsicle
+
+# Pour Fedora
+sudo dnf install jpegoptim optipng pngquant libwebp-tools gifsicle
+```
+
+#### macOS (avec Homebrew)
+
+```bash
+brew install jpegoptim optipng pngquant webp gifsicle
+```
+
+#### Vérification de l'installation
+
+Vérifiez que les outils sont bien installés :
+
+```bash
+jpegoptim --version
+optipng --version
+pngquant --version
+cwebp -version
+gifsicle --version
+```
+
+#### Installation avec DDEV
+
+Si vous utilisez DDEV pour le développement local, installez les outils dans le conteneur :
+
+```bash
+ddev exec apt-get update
+ddev exec apt-get install -y jpegoptim optipng pngquant webp gifsicle
+```
+
+Ou ajoutez-les dans votre `.ddev/config.yaml` :
+
+```yaml
+webimage_extra_packages:
+  - jpegoptim
+  - optipng
+  - pngquant
+  - webp
+  - gifsicle
+```
+
+> **Note** : L'optimisation d'images fonctionne même si ces outils ne sont pas installés, mais sera moins efficace. Le package utilisera alors uniquement le redimensionnement et la compression de base via GD/Intervention Image.
+
 ## ⚙️ Configuration
 
 Le fichier de configuration se trouve dans `config/media-library-pro.php` :
@@ -156,6 +219,72 @@ Le fichier de configuration se trouve dans `config/media-library-pro.php` :
     'allowed_mime_types' => [],    // Vide = tous les types autorisés
 ],
 ```
+
+### Configuration de l'optimisation d'images
+
+```php
+'optimization' => [
+    'enabled' => true,              // Activer l'optimisation
+    'auto_optimize' => true,         // Optimisation automatique à l'upload
+    'max_width' => 1920,             // Largeur maximale (null = pas de limite)
+    'max_height' => 1920,            // Hauteur maximale (null = pas de limite)
+    'quality' => 85,                 // Qualité JPEG/WebP (1-100)
+    'convert_to_webp' => false,      // Convertir automatiquement en WebP
+    'preserve_original' => false,    // Conserver l'original si conversion WebP
+    'queue' => false,                // Traitement en queue (asynchrone)
+],
+```
+
+**Options d'optimisation :**
+- `enabled` : Active/désactive complètement l'optimisation
+- `auto_optimize` : Optimisation automatique lors de l'upload (recommandé)
+- `max_width` / `max_height` : Redimensionne automatiquement les images trop grandes (utile pour les photos de téléphone)
+- `quality` : Qualité de compression (80 = bon compromis qualité/taille pour le web, recommandé 75-80)
+- `convert_to_webp` : Convertit les JPEG/PNG en WebP (recommandé : 30-50% de réduction supplémentaire, supporté par tous les navigateurs modernes)
+- `preserve_original` : Si `true`, conserve l'original lors de la conversion WebP
+- `queue` : Si `true`, l'optimisation se fait en arrière-plan (nécessite les queues Laravel)
+
+> **Note** : L'optimisation est particulièrement utile pour les images uploadées depuis des téléphones, qui sont souvent très grandes (3000x4000px+) et lourdes (5-15 Mo).
+
+### Optimiser les images existantes
+
+Pour optimiser les images déjà uploadées avant l'activation de l'optimisation automatique, vous avez deux options :
+
+#### Option 1 : Via l'interface (image par image)
+
+1. Ouvrez la bibliothèque média dans Filament
+2. Cliquez sur une image pour ouvrir la modale de détails
+3. Cliquez sur le bouton **"Optimiser l'image"** dans la section Actions
+4. L'image sera optimisée et vous verrez l'espace économisé
+
+#### Option 2 : Via la commande Artisan (en masse)
+
+Optimisez toutes les images existantes en une seule commande :
+
+```bash
+php artisan media-library-pro:optimize-images
+```
+
+**Options disponibles :**
+
+```bash
+# Optimiser toutes les images
+php artisan media-library-pro:optimize-images
+
+# Limiter le nombre d'images à traiter
+php artisan media-library-pro:optimize-images --limit=50
+
+# Forcer l'optimisation même si déjà optimisée
+php artisan media-library-pro:optimize-images --force
+
+# Traiter par batch de 200 images (par défaut: 100)
+php artisan media-library-pro:optimize-images --chunk=200
+```
+
+La commande affichera :
+- Le nombre d'images optimisées
+- Le nombre d'échecs
+- L'espace total économisé (en MB)
 
 ## 🏃 Démarrage rapide
 
@@ -1078,6 +1207,87 @@ try {
 ```
 
 ## 🐛 Dépannage
+
+### Le bouton d'optimisation n'apparaît pas ou ne fonctionne pas
+
+Si le bouton "Optimiser l'image" n'apparaît pas ou ne fonctionne pas après une mise à jour du package :
+
+#### 1. Nettoyer tous les caches
+
+```bash
+# Nettoyer tous les caches Laravel
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+php artisan route:clear
+
+# Nettoyer le cache Livewire (important pour les composants Livewire)
+php artisan livewire:discover
+
+# Si vous utilisez Filament v4, vider aussi le cache Filament
+php artisan filament:cache-components
+php artisan filament:cache-forms
+php artisan filament:cache-tables
+```
+
+**En développement avec DDEV :**
+
+```bash
+ddev exec php artisan cache:clear
+ddev exec php artisan config:clear
+ddev exec php artisan view:clear
+ddev exec php artisan route:clear
+ddev exec php artisan livewire:discover
+```
+
+#### 2. Vérifier que l'optimisation est activée
+
+Assurez-vous que dans `config/media-library-pro.php`, vous avez :
+
+```php
+'optimization' => [
+    'enabled' => true,  // ← Doit être à true
+    // ...
+],
+```
+
+Puis republiez la configuration si nécessaire :
+
+```bash
+php artisan vendor:publish --tag=media-library-pro-config --force
+php artisan config:clear
+```
+
+#### 3. Vérifier la console du navigateur
+
+Ouvrez la console développeur (F12) et vérifiez s'il y a des erreurs JavaScript ou Livewire.
+
+#### 4. Vérifier les logs Laravel
+
+```bash
+tail -f storage/logs/laravel.log
+```
+
+### Les vues du package ne se mettent pas à jour
+
+Si vous modifiez les vues du package et que les changements ne sont pas visibles :
+
+1. **Vider le cache des vues :**
+   ```bash
+   php artisan view:clear
+   ```
+
+2. **En développement, vérifier que les vues sont bien chargées depuis le package :**
+   - Les vues sont chargées via `loadViewsFrom()` dans le ServiceProvider
+   - Pas besoin de les publier pour qu'elles fonctionnent
+   - Si vous avez publié les vues, supprimez-les de `resources/views/vendor/media-library-pro/`
+
+3. **Redémarrer le serveur de développement** (si vous utilisez `php artisan serve`)
+
+4. **En développement avec DDEV, redémarrer le conteneur :**
+   ```bash
+   ddev restart
+   ```
 
 ### Les images ne s'affichent pas
 
