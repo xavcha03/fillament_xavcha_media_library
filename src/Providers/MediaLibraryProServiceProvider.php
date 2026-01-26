@@ -95,6 +95,7 @@ class MediaLibraryProServiceProvider extends ServiceProvider
             ->group(function () {
                 // Route pour servir les conversions (UUID ou ID)
                 Route::get('/conversion/{media}/{conversion}', [\Xavier\MediaLibraryPro\Http\Controllers\MediaConversionController::class, 'show'])
+                    ->where('media', '[0-9a-fA-F\-]+') // UUID format avec tirets
                     ->name('conversion');
                 
                 // Route pour servir les médias (UUID ou ID)
