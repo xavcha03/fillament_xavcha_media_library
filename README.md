@@ -1,3 +1,117 @@
+# Media Library Pro pour Laravel & Filament
+
+Package Laravel / Filament complet pour gérer vos médias (images, vidéos, documents) avec collections, conversions d’images et intégration native Filament v4.
+
+## ✨ Fonctionnalités principales
+
+- **Bibliothèque média centralisée** (images, vidéos, documents…)
+- **Collections par modèle** via le trait `HasMediaFiles`
+- **Conversions d’images** configurables (thumb, small, medium, etc.)
+- **Composant Filament `MediaPickerUnified`** (upload + bibliothèque unifiée)
+- **Architecture sans duplication** : un fichier physique peut être lié à plusieurs modèles
+- **Support dossiers** (organisation hiérarchique), actions configurables, vue grille & liste
+
+## ✅ Compatibilité
+
+- **PHP** : 8.2+
+- **Laravel** : 12.x
+- **Filament** : 4.x
+
+## 🚀 Installation rapide
+
+```bash
+composer require xavcha/fillament-xavcha-media-library
+php artisan vendor:publish --tag=media-library-pro-migrations
+php artisan migrate
+php artisan vendor:publish --tag=media-library-pro-config
+php artisan storage:link
+```
+
+Plus de détails dans `docs/INSTALLATION.md`.
+
+## 🏃 Démarrage rapide
+
+### 1. Ajouter le trait au modèle
+
+```php
+use Xavier\MediaLibraryPro\Traits\HasMediaFiles;
+
+class Article extends Model
+{
+    use HasMediaFiles;
+
+    protected function registerMediaCollections(): array
+    {
+        return [
+            'images' => [
+                'singleFile' => true,
+                'acceptedMimeTypes' => ['image/jpeg', 'image/png', 'image/webp'],
+            ],
+        ];
+    }
+}
+```
+
+### 2. Utiliser `MediaPickerUnified` dans un formulaire Filament
+
+```php
+use Xavier\MediaLibraryPro\Forms\Components\MediaPickerUnified;
+
+MediaPickerUnified::make('image_ids')
+    ->label('Image principale')
+    ->collection('images')
+    ->acceptedFileTypes(['image/*'])
+    ->single()
+    ->showUpload(true)
+    ->showLibrary(true);
+```
+
+### 3. Afficher l’image dans une vue Blade
+
+```blade
+@if($article->getFirstMediaFile('images'))
+    <img
+        src="{{ route('media-library-pro.serve', ['media' => $article->getFirstMediaFile('images')->mediaFile->uuid]) }}"
+        alt="{{ $article->title }}"
+    >
+@endif
+```
+
+## 🏗️ Architecture (résumé)
+
+- `MediaFile` : fichier unique (chemin, disk, mime, taille, métadonnées…)
+- `MediaAttachment` : lien polymorphique modèle ↔ fichier (collection, ordre, propriétés)
+- `MediaConversion` : variantes générées (thumb, medium, …)
+- Services dédiés :
+  - `MediaStorageService` : stockage & URLs
+  - `MediaUploadService` : validation + upload
+  - `MediaConversionService` : conversions
+  - `MediaFolderService` : dossiers hiérarchiques
+
+Les routes publiques principales :
+
+- `media-library-pro.serve` : servir un média original
+- `media-library-pro.conversion` : servir une conversion
+- `media-library-pro.download` : téléchargement d’un média
+
+## 📚 Documentation
+
+Toute la documentation détaillée a été déplacée dans le dossier `docs/` :
+
+- `docs/INSTALLATION.md` – Installation détaillée
+- `docs/GUIDE_UTILISATION.md` – Guide complet d’utilisation de `MediaPickerUnified`
+- `docs/METHODES_FLUENTES.md` – API fluente du composant
+- `docs/STYLING.md` – Styling & intégration Tailwind / Filament
+- `docs/WORKBENCH.md` – Environnement de développement avec workbench + ddev
+- `docs/CHANGELOG.md` – Historique des versions
+- `docs/VERSIONING.md` – Stratégie de versioning & release
+- `docs/TODO.md` – Roadmap et fonctionnalités prévues
+- `docs/CONTRIBUTING.md` – Guide de contribution
+
+## 📄 Licence
+
+Ce package est distribué sous licence **MIT**.
+
 # Media Library Pro
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x%2B-red.svg)](https://laravel.com)

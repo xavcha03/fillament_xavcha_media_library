@@ -8,5 +8,20 @@ composer.lock
 Thumbs.db
 
 # Workbench environment
-/workbench/
+# garder le code du workbench mais ignorer le runtime
+/workbench/vendor/
+/workbench/node_modules/
+/workbench/storage/
+/workbench/public/storage/
+/workbench/public/hot
+/workbench/public/build
+/workbench/.env
+/workbench/.phpunit.result.cache
+/workbench/.DS_Store
+/workbench/Thumbs.db
+
 /.ddev/
+
+# Cursor / Boost config
+/.cursor/
+/workbench/.cursor/
