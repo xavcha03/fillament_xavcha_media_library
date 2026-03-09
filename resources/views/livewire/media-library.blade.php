@@ -818,7 +818,7 @@
                 >
                     @if($detailMedia)
                         {{-- Header Filament --}}
-                        <div class="fi-modal-header flex items-center gap-x-3 overflow-hidden px-6 py-4 sm:px-6">
+                        <div class="fi-modal-header flex items-center justify-between gap-x-4 overflow-hidden px-6 py-4 sm:px-6">
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-3">
                                     <div class="fi-icon-btn flex h-10 w-10 items-center justify-center rounded-lg bg-primary-500 dark:bg-primary-600">
@@ -836,46 +836,70 @@
                                         <h3 id="media-detail-title" class="fi-modal-heading text-lg font-semibold leading-6 text-gray-950 dark:text-white truncate">
                                             {{ $detailMedia->file_name }}
                                         </h3>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="fi-badge inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-primary-50 text-primary-700 ring-primary-600/10 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20">
+                                        <div class="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                                            <span class="fi-badge inline-flex items-center gap-x-1 rounded-md px-2 py-1 font-medium ring-1 ring-inset bg-primary-50 text-primary-700 ring-primary-600/10 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20">
                                                 {{ $detailMedia->getFormattedSize() }}
                                             </span>
                                             @if($detailMedia->isImage() && $detailMedia->width && $detailMedia->height)
-                                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span class="text-gray-500 dark:text-gray-400">
                                                     {{ $detailMedia->width }} × {{ $detailMedia->height }} px
                                                 </span>
                                             @endif
+                                            <span class="text-gray-500 dark:text-gray-400 break-all">
+                                                {{ $detailMedia->mime_type }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <x-filament::icon-button
-                                icon="heroicon-o-x-mark"
-                                color="gray"
-                                size="sm"
-                                wire:click="closeDetailModal"
-                                aria-label="Fermer"
-                            />
+                            <div class="flex items-center gap-2">
+                                <x-filament::button
+                                    icon="heroicon-o-chevron-left"
+                                    color="gray"
+                                    size="sm"
+                                    wire:click="openPreviousDetail"
+                                    :disabled="$detailIndex === null || $detailIndex <= 0"
+                                    class="hidden sm:inline-flex"
+                                >
+                                    <span class="hidden lg:inline">Précédent</span>
+                                </x-filament::button>
+                                <x-filament::button
+                                    icon="heroicon-o-chevron-right"
+                                    color="gray"
+                                    size="sm"
+                                    wire:click="openNextDetail"
+                                    :disabled="$detailIndex === null || $detailIndex >= (count($detailMediaIdsOnPage) - 1)"
+                                    class="hidden sm:inline-flex"
+                                >
+                                    <span class="hidden lg:inline">Suivant</span>
+                                </x-filament::button>
+                                <x-filament::icon-button
+                                    icon="heroicon-o-x-mark"
+                                    color="gray"
+                                    size="sm"
+                                    wire:click="closeDetailModal"
+                                    aria-label="Fermer"
+                                />
+                            </div>
                         </div>
 
                         {{-- Content Filament --}}
                         <div class="fi-modal-content-ctn overflow-y-auto px-6 py-4" style="max-height: calc(90vh - 200px);">
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {{-- Colonne gauche : Preview --}}
-                                <div class="lg:col-span-2 space-y-6">
-                                    {{-- Preview --}}
+                                {{-- Colonne gauche : Preview uniquement --}}
+                                <div class="lg:col-span-2">
                                     <x-filament::section>
                                         <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
                                             @if($detailMedia->isImage())
-                                                <div class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 min-h-[400px] p-4">
+                                                <div class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 p-4">
                                                     <img
                                                         src="{{ $this->getMediaImageUrl($detailMedia) }}"
                                                         alt="{{ $detailMedia->alt_text ?: $detailMedia->file_name }}"
-                                                        class="max-w-full max-h-[600px] object-contain rounded-lg"
+                                                        class="max-w-full max-h-[65vh] object-contain rounded-lg"
                                                     />
                                                 </div>
                                             @else
-                                                <div class="flex flex-col items-center justify-center h-96 bg-gray-100 dark:bg-gray-800">
+                                                <div class="flex flex-col items-center justify-center min-h-[320px] bg-gray-100 dark:bg-gray-800">
                                                     @if($detailMedia->isVideo())
                                                         <x-heroicon-o-video-camera class="h-24 w-24 text-gray-400 dark:text-gray-500 mb-4" />
                                                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Fichier vidéo</p>
@@ -890,8 +914,46 @@
                                             @endif
                                         </div>
                                     </x-filament::section>
+                                </div>
 
-                                    {{-- Informations détaillées --}}
+                                {{-- Colonne droite : Métadonnées, Infos, Actions --}}
+                                <div class="space-y-6">
+                                    {{-- Formulaire Métadonnées --}}
+                                    <x-filament::section>
+                                        <x-slot name="heading">
+                                            Métadonnées
+                                        </x-slot>
+                                        <div class="fi-section-content-ctn space-y-4">
+                                            <div>
+                                                <label class="fi-input-label block text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2">
+                                                    Texte alternatif (Alt)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    wire:model="detailAltText"
+                                                    placeholder="Décrivez l'image pour l'accessibilité"
+                                                    class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
+                                                />
+                                                <p class="fi-hint mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    Améliore l'accessibilité et le SEO
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label class="fi-input-label block text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2">
+                                                    Description
+                                                </label>
+                                                <textarea
+                                                    wire:model="detailDescription"
+                                                    rows="4"
+                                                    placeholder="Description optionnelle du média"
+                                                    class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 resize-none"
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    </x-filament::section>
+
+                                    {{-- Informations détaillées (lecture seule) --}}
                                     <x-filament::section>
                                         <x-slot name="heading">
                                             Informations détaillées
@@ -941,51 +1003,13 @@
                                             @endif
                                         </div>
                                     </x-filament::section>
-                                </div>
 
-                                {{-- Colonne droite : Formulaire et Actions --}}
-                                <div class="space-y-6">
-                                    {{-- Formulaire Métadonnées --}}
-                                    <x-filament::section>
-                                        <x-slot name="heading">
-                                            Métadonnées
-                                        </x-slot>
-                                        <div class="fi-section-content-ctn space-y-4">
-                                            <div>
-                                                <label class="fi-input-label block text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2">
-                                                    Texte alternatif (Alt)
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    wire:model="detailAltText"
-                                                    placeholder="Décrivez l'image pour l'accessibilité"
-                                                    class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
-                                                />
-                                                <p class="fi-hint mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    Améliore l'accessibilité et le SEO
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <label class="fi-input-label block text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2">
-                                                    Description
-                                                </label>
-                                                <textarea
-                                                    wire:model="detailDescription"
-                                                    rows="4"
-                                                    placeholder="Description optionnelle du média"
-                                                    class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 resize-none"
-                                                ></textarea>
-                                            </div>
-                                        </div>
-                                    </x-filament::section>
-
-                                    {{-- Section Actions --}}
+                                    {{-- Section Actions (Gestion + Image) --}}
                                     <x-filament::section>
                                         <x-slot name="heading">
                                             Actions
                                         </x-slot>
-                                        <div class="fi-section-content-ctn space-y-2">
+                                        <div class="fi-section-content-ctn space-y-4">
                                             @if(config('media-library-pro.actions.rename', true))
                                                 <x-filament::button
                                                     wire:click="openRenameModal"

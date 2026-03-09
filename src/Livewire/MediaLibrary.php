@@ -38,6 +38,9 @@ class MediaLibrary extends Component
     public ?MediaFile $detailMedia = null;
     public string $detailAltText = '';
     public string $detailDescription = '';
+    public ?int $detailIndex = null;
+    /** @var array<int> */
+    public array $detailMediaIdsOnPage = [];
     public ?int $currentFolderId = null;
     public bool $showRenameModal = false;
     public string $renameFileName = '';
@@ -868,6 +871,15 @@ class MediaLibrary extends Component
         $this->detailMedia = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
         $this->detailAltText = $this->detailMedia->alt_text ?? '';
         $this->detailDescription = $this->detailMedia->description ?? '';
+
+        // Préparer les données pour la navigation précédent / suivant dans la page courante
+        $idsOnPage = $this->media->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $this->detailMediaIdsOnPage = $idsOnPage;
+
+        $currentId = (int) $this->detailMedia->id;
+        $index = array_search($currentId, $idsOnPage, true);
+        $this->detailIndex = $index === false ? null : $index;
+
         $this->showDetailModal = true;
     }
 
@@ -875,6 +887,8 @@ class MediaLibrary extends Component
     {
         $this->showDetailModal = false;
         $this->detailMedia = null;
+        $this->detailIndex = null;
+        $this->detailMediaIdsOnPage = [];
     }
 
     public function updateMediaDetails(): void
@@ -888,6 +902,61 @@ class MediaLibrary extends Component
         $this->detailMedia->save();
 
         $this->showDetailModal = false;
+    }
+
+    public function openPreviousDetail(): void
+    {
+        if ($this->detailIndex === null || empty($this->detailMediaIdsOnPage)) {
+            return;
+        }
+
+        if ($this->detailIndex <= 0) {
+            return;
+        }
+
+        $newIndex = $this->detailIndex - 1;
+        if (!isset($this->detailMediaIdsOnPage[$newIndex])) {
+            return;
+        }
+
+        $mediaId = (int) $this->detailMediaIdsOnPage[$newIndex];
+        $media = MediaFile::find($mediaId);
+        if (!$media) {
+            return;
+        }
+
+        $this->detailMedia = $media;
+        $this->detailAltText = $this->detailMedia->alt_text ?? '';
+        $this->detailDescription = $this->detailMedia->description ?? '';
+        $this->detailIndex = $newIndex;
+    }
+
+    public function openNextDetail(): void
+    {
+        if ($this->detailIndex === null || empty($this->detailMediaIdsOnPage)) {
+            return;
+        }
+
+        $lastIndex = count($this->detailMediaIdsOnPage) - 1;
+        if ($this->detailIndex >= $lastIndex) {
+            return;
+        }
+
+        $newIndex = $this->detailIndex + 1;
+        if (!isset($this->detailMediaIdsOnPage[$newIndex])) {
+            return;
+        }
+
+        $mediaId = (int) $this->detailMediaIdsOnPage[$newIndex];
+        $media = MediaFile::find($mediaId);
+        if (!$media) {
+            return;
+        }
+
+        $this->detailMedia = $media;
+        $this->detailAltText = $this->detailMedia->alt_text ?? '';
+        $this->detailDescription = $this->detailMedia->description ?? '';
+        $this->detailIndex = $newIndex;
     }
 
     /**
