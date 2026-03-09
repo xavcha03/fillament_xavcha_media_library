@@ -19,7 +19,7 @@ class MediaLibrary extends Component
     use WithPagination;
     use WithFileUploads;
 
-    public string $view = 'list';
+    public string $view = 'grid';
     public array $filters = [];
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
@@ -46,7 +46,7 @@ class MediaLibrary extends Component
     public ?int $moveFolderId = null;
 
     protected $queryString = [
-        'view' => ['except' => 'list'],
+        'view' => ['except' => 'grid'],
         'sortBy' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
         'currentFolderId' => ['except' => null],
@@ -57,10 +57,19 @@ class MediaLibrary extends Component
         $this->pickerMode = $pickerMode;
         $this->multiple = $multiple;
         $this->acceptedTypes = $acceptedTypes;
-        
-        // Toujours commencer en mode liste par défaut
-        $this->view = 'list';
-        
+
+        // Vue par défaut : grille, avec possibilité de mémoriser le dernier choix
+        if (config('media-library-pro.view.remember', true)) {
+            $rememberedView = Session::get('media-library-view');
+            if (in_array($rememberedView, ['list', 'grid'], true)) {
+                $this->view = $rememberedView;
+            } else {
+                $this->view = 'grid';
+            }
+        } else {
+            $this->view = 'grid';
+        }
+
         $this->sortBy = config('media-library-pro.sorters.default', 'created_at');
         $this->sortDirection = config('media-library-pro.sorters.direction', 'desc');
     }

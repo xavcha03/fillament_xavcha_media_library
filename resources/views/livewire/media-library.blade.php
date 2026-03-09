@@ -2,17 +2,9 @@
     {{-- Toolbar --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-            <x-filament::button
-                wire:click="setListView"
-                size="sm"
-                color="gray"
-                :outlined="$view !== 'list'"
-            >
-                <x-slot name="icon">
-                    <x-heroicon-o-list-bullet class="w-4 h-4" />
-                </x-slot>
-                Liste
-            </x-filament::button>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Vue
+            </span>
             <x-filament::button
                 wire:click="setGridView"
                 size="sm"
@@ -23,6 +15,17 @@
                     <x-heroicon-o-squares-2x2 class="w-4 h-4" />
                 </x-slot>
                 Grille
+            </x-filament::button>
+            <x-filament::button
+                wire:click="setListView"
+                size="sm"
+                color="gray"
+                :outlined="$view !== 'list'"
+            >
+                <x-slot name="icon">
+                    <x-heroicon-o-list-bullet class="w-4 h-4" />
+                </x-slot>
+                Liste
             </x-filament::button>
         </div>
 
