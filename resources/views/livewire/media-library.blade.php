@@ -244,12 +244,12 @@
                     <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden pointer-events-none group">
                             @if(str_starts_with($item->mime_type, 'image/'))
                                 @php
-                                    // Utiliser la route publique pour servir les images (accessible depuis le frontend)
+                                    // Utiliser un paramètre de version pour contourner le cache navigateur
+                                    $version = $item->updated_at?->timestamp ?? $item->size ?? time();
                                     try {
-                                        $imageUrl = route('media-library-pro.serve', ['media' => $item->uuid]);
+                                        $imageUrl = route('media-library-pro.serve', ['media' => $item->uuid, 't' => $version]);
                                     } catch (\Exception $e) {
-                                        // Fallback si la route n'existe pas
-                                        $imageUrl = url('/media-library-pro/serve/' . $item->uuid);
+                                        $imageUrl = url('/media-library-pro/serve/' . $item->uuid . '?t=' . $version);
                                     }
                                 @endphp
                                 <img
@@ -366,12 +366,11 @@
                                                 <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center overflow-hidden">
                                                     @if(str_starts_with($item->mime_type, 'image/'))
                                                         @php
-                                                            // Utiliser la route publique pour servir les images (accessible depuis le frontend)
+                                                            $version = $item->updated_at?->timestamp ?? $item->size ?? time();
                                                             try {
-                                                                $imageUrl = route('media-library-pro.serve', ['media' => $item->uuid]);
+                                                                $imageUrl = route('media-library-pro.serve', ['media' => $item->uuid, 't' => $version]);
                                                             } catch (\Exception $e) {
-                                                                // Fallback si la route n'existe pas
-                                                                $imageUrl = url('/media-library-pro/serve/' . $item->uuid);
+                                                                $imageUrl = url('/media-library-pro/serve/' . $item->uuid . '?t=' . $version);
                                                             }
                                                         @endphp
                                                         <img src="{{ $imageUrl }}" alt="{{ $item->file_name }}" class="w-full h-full object-cover" loading="lazy" />
@@ -748,9 +747,9 @@
                             <span wire:loading wire:target="uploadFiles" class="flex items-center gap-2">
                                 <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2-647z"></path>
                                 </svg>
-                                Import en cours...
+                                Traitement en cours...
                             </span>
                         </x-filament::button>
                     </div>
@@ -927,6 +926,19 @@
                                                     </div>
                                                 @endif
                                             </div>
+                                            @if(is_array($detailMedia->metadata ?? null) && isset($detailMedia->metadata['orientation']))
+                                                <div class="mt-4 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-dashed border-gray-200 dark:border-gray-700 px-3 py-2">
+                                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                                                        Infos techniques
+                                                    </p>
+                                                    <p class="text-xs text-gray-600 dark:text-gray-300">
+                                                        Orientation EXIF d’origine :
+                                                        <span class="font-semibold">
+                                                            {{ $detailMedia->metadata['orientation'] }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            @endif
                                         </div>
                                     </x-filament::section>
                                 </div>
@@ -1037,31 +1049,61 @@
                                                 @php
                                                     $optimizationEnabled = config('media-library-pro.optimization.enabled', false);
                                                 @endphp
-                                                @if($optimizationEnabled)
-                                                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                                                    <div class="grid grid-cols-2 gap-2">
                                                         <x-filament::button
-                                                            wire:click="optimizeImage('{{ $detailMedia->uuid }}')"
+                                                            wire:click="rotateLeft('{{ $detailMedia->uuid }}')"
                                                             wire:loading.attr="disabled"
-                                                            wire:target="optimizeImage"
-                                                            color="primary"
+                                                            wire:target="rotateLeft"
+                                                            color="gray"
                                                             size="sm"
-                                                            class="w-full"
+                                                            class="w-full justify-center"
                                                         >
                                                             <x-slot name="icon">
-                                                                <x-heroicon-o-arrow-path class="h-4 w-4" wire:loading.remove wire:target="optimizeImage" />
-                                                                <svg class="animate-spin h-4 w-4" wire:loading wire:target="optimizeImage" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                </svg>
+                                                                <x-heroicon-o-arrow-uturn-left class="h-4 w-4" />
                                                             </x-slot>
-                                                            <span wire:loading.remove wire:target="optimizeImage">Optimiser l'image</span>
-                                                            <span wire:loading wire:target="optimizeImage">Optimisation en cours...</span>
+                                                            Pivoter à gauche
                                                         </x-filament::button>
-                                                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-                                                            Réduit la taille et optimise la qualité
-                                                        </p>
+                                                        <x-filament::button
+                                                            wire:click="rotateRight('{{ $detailMedia->uuid }}')"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="rotateRight"
+                                                            color="gray"
+                                                            size="sm"
+                                                            class="w-full justify-center"
+                                                        >
+                                                            <x-slot name="icon">
+                                                                <x-heroicon-o-arrow-uturn-right class="h-4 w-4" />
+                                                            </x-slot>
+                                                            Pivoter à droite
+                                                        </x-filament::button>
                                                     </div>
-                                                @endif
+                                                    @if($optimizationEnabled)
+                                                        <div class="pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+                                                            <x-filament::button
+                                                                wire:click="optimizeImage('{{ $detailMedia->uuid }}')"
+                                                                wire:loading.attr="disabled"
+                                                                wire:target="optimizeImage"
+                                                                color="primary"
+                                                                size="sm"
+                                                                class="w-full"
+                                                            >
+                                                                <x-slot name="icon">
+                                                                    <x-heroicon-o-arrow-path class="h-4 w-4" wire:loading.remove wire:target="optimizeImage" />
+                                                                    <svg class="animate-spin h-4 w-4" wire:loading wire:target="optimizeImage" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                </x-slot>
+                                                                <span wire:loading.remove wire:target="optimizeImage">Optimiser l'image</span>
+                                                                <span wire:loading wire:target="optimizeImage">Optimisation en cours...</span>
+                                                            </x-filament::button>
+                                                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                                                                Réduit la taille et optimise la qualité
+                                                            </p>
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </div>
                                     </x-filament::section>

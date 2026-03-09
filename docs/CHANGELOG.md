@@ -41,6 +41,22 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 - Classes `.media-card` et `.media-drag-select-box` dans `media-library-pro.css`
 - Surlignage et feedback visuel pour la sélection
 
+### ✨ Ajouté - Rotation manuelle & optimisation auto
+
+#### Rotation manuelle dans l’UI
+- Nouvelles méthodes Livewire `rotateLeft()` et `rotateRight()` dans `MediaLibrary`.
+- Service `ImageOptimizationService::rotateMediaFile()` pour pivoter l’original et régénérer les conversions associées.
+- Deux boutons « Pivoter à gauche » / « Pivoter à droite » ajoutés dans le panneau de détails de la bibliothèque.
+- Le package **n’applique plus de correction EXIF automatique** : l’image est importée telle quelle, et l’utilisateur corrige si besoin via ces actions.
+
+#### Feedback Uploading / Processing
+- Dans le picker : badge « Upload en cours… » pendant le transfert, puis bouton avec état « Traitement en cours… » pendant le traitement serveur.
+- Dans la bibliothèque : état de bouton « Traitement en cours… » pendant l’upload (traitement complet côté serveur).
+
+#### Métadonnées visibles
+- Stockage de l’orientation EXIF brute dans `metadata['orientation']` lors de l’upload.
+- Affichage de l’orientation d’origine dans le panneau « Informations détaillées » de la modale de détails.
+
 ---
 
 ## [1.1.0] - 2025-01-15

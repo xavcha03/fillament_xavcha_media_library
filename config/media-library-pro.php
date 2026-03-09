@@ -45,5 +45,7 @@ return [
         'convert_to_webp' => true, // Convertir automatiquement en WebP (recommandé : 30-50% de réduction supplémentaire)
         'preserve_original' => false, // Conserver l'original si conversion WebP
         'queue' => false, // Traitement en queue (asynchrone)
+        // On ne corrige plus automatiquement l'orientation EXIF : rotation manuelle via l'UI.
+        'fix_orientation' => false,
     ],
 ];

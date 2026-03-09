@@ -614,6 +614,63 @@ class MediaLibrary extends Component
     }
 
     /**
+     * Pivote une image vers la gauche (90° anti-horaire)
+     */
+    public function rotateLeft(string $mediaUuid): void
+    {
+        $this->rotateImage($mediaUuid, 'left');
+    }
+
+    /**
+     * Pivote une image vers la droite (90° horaire)
+     */
+    public function rotateRight(string $mediaUuid): void
+    {
+        $this->rotateImage($mediaUuid, 'right');
+    }
+
+    protected function rotateImage(string $mediaUuid, string $direction): void
+    {
+        try {
+            $mediaFile = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
+
+            if (!$mediaFile->isImage()) {
+                session()->flash('notify', [
+                    'type' => 'error',
+                    'message' => 'Seules les images peuvent être pivotées',
+                ]);
+                return;
+            }
+
+            /** @var ImageOptimizationService $optimizationService */
+            $optimizationService = app(ImageOptimizationService::class);
+            $success = $optimizationService->rotateMediaFile($mediaFile, $direction);
+
+            if ($success) {
+                // Rafraîchir les données dans la modale
+                $this->detailMedia = $mediaFile->fresh();
+
+                session()->flash('notify', [
+                    'type' => 'success',
+                    'message' => $direction === 'left'
+                        ? 'Image pivotée vers la gauche'
+                        : 'Image pivotée vers la droite',
+                ]);
+            } else {
+                session()->flash('notify', [
+                    'type' => 'error',
+                    'message' => 'Impossible de pivoter cette image',
+                ]);
+            }
+        } catch (\Exception $e) {
+            session()->flash('notify', [
+                'type' => 'error',
+                'message' => 'Erreur : ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Formate les bytes en format lisible
      */
     protected function formatBytes(int $bytes, int $precision = 2): string
@@ -839,9 +896,18 @@ class MediaLibrary extends Component
     public function getMediaImageUrl(MediaFile $media): string
     {
         try {
-            return route('media-library-pro.serve', ['media' => $media->uuid]);
+            // Ajouter un paramètre de cache-busting pour forcer le navigateur
+            // à recharger l'image quand elle est pivotée / modifiée.
+            $version = $media->updated_at?->timestamp ?? $media->size ?? time();
+
+            return route('media-library-pro.serve', [
+                'media' => $media->uuid,
+                't' => $version,
+            ]);
         } catch (\Exception $e) {
-            return url('/media-library-pro/serve/' . $media->uuid);
+            $version = $media->updated_at?->timestamp ?? $media->size ?? time();
+
+            return url('/media-library-pro/serve/' . $media->uuid . '?t=' . $version);
         }
     }
 

@@ -155,6 +155,10 @@ class MediaUploadService
                         'aperture' => $exif['COMPUTED']['ApertureFNumber'] ?? null,
                         'focal_length' => $exif['FocalLength'] ?? null,
                     ];
+                    // Conserver aussi l'orientation brute pour affichage/debug
+                    if (isset($exif['Orientation'])) {
+                        $metadata['orientation'] = (int) $exif['Orientation'];
+                    }
                 }
             } catch (\Exception $e) {
                 // Ignorer les erreurs EXIF

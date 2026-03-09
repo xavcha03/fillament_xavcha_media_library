@@ -11,6 +11,7 @@ Package Laravel / Filament complet pour gérer vos médias (images, vidéos, doc
 - **Architecture sans duplication** : un fichier physique peut être lié à plusieurs modèles
 - **Support dossiers** (organisation hiérarchique), actions configurables, vue grille & liste
 - **UX de sélection moderne** : clic, Ctrl/Cmd, Shift (plage), double-clic, drag-select rectangulaire, toolbar contextuelle
+ - **Rotation manuelle simple** : import brut de l’image (sans correction EXIF automatique) + boutons « Pivoter à gauche / à droite » et infos d’orientation dans la modale de détails
 
 ## ✅ Compatibilité
 

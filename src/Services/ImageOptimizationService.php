@@ -4,6 +4,7 @@ namespace Xavier\MediaLibraryPro\Services;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Xavier\MediaLibraryPro\Models\MediaFile;
 
 class ImageOptimizationService
 {
@@ -19,6 +20,7 @@ class ImageOptimizationService
     public function __construct()
     {
         $config = config('media-library-pro.optimization', []);
+
         $this->enabled = $config['enabled'] ?? false;
         $this->autoOptimize = $config['auto_optimize'] ?? true;
         $this->maxWidth = $config['max_width'] ?? 1920;
@@ -30,76 +32,177 @@ class ImageOptimizationService
     }
 
     /**
-     * Optimise un MediaFile existant
-     * 
-     * @param \Xavier\MediaLibraryPro\Models\MediaFile $mediaFile
-     * @return bool True si l'optimisation a réussi
+     * Optimise un MediaFile existant (bouton "Optimiser l'image").
      */
-    public function optimizeMediaFile(\Xavier\MediaLibraryPro\Models\MediaFile $mediaFile): bool
+    public function optimizeMediaFile(MediaFile $mediaFile): bool
     {
-        // Pour l'optimisation manuelle, on vérifie seulement que le service est activé
-        // (pas besoin que auto_optimize soit true)
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return false;
         }
 
-        if (!$mediaFile->isImage()) {
+        if (! $mediaFile->isImage()) {
             return false;
         }
 
         try {
             $originalSize = $mediaFile->size;
-            $originalPath = $mediaFile->path;
-            
-            // Optimiser l'image (forcer l'optimisation même si auto_optimize est false)
-            $newPath = $this->optimizeFile($mediaFile->path, $mediaFile->mime_type, $mediaFile->disk, true);
-            
-            // Si conversion WebP, mettre à jour le MediaFile
+
+            $newPath = $this->optimizeFile(
+                $mediaFile->path,
+                $mediaFile->mime_type,
+                $mediaFile->disk,
+                true,
+            );
+
             if ($newPath && $newPath !== $mediaFile->path) {
                 $mediaFile->path = $newPath;
-                $mediaFile->mime_type = 'image/webp';
-                $mediaFile->stored_name = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $mediaFile->stored_name);
+                if ($this->shouldConvertToWebp($mediaFile->mime_type)) {
+                    $mediaFile->mime_type = 'image/webp';
+                }
             }
-            
-            // Mettre à jour les dimensions et la taille
+
             $absolutePath = Storage::disk($mediaFile->disk)->path($mediaFile->path);
+
             if (file_exists($absolutePath)) {
-                $imageInfo = getimagesize($absolutePath);
+                $imageInfo = @getimagesize($absolutePath);
                 if ($imageInfo) {
                     $mediaFile->width = $imageInfo[0];
                     $mediaFile->height = $imageInfo[1];
                 }
                 $mediaFile->size = filesize($absolutePath);
             }
-            
+
             $mediaFile->save();
-            
+
             $newSize = $mediaFile->size;
             $savedBytes = $originalSize - $newSize;
             $savedPercent = $originalSize > 0 ? round(($savedBytes / $originalSize) * 100, 1) : 0;
-            
-            Log::info("ImageOptimizationService: Image optimisée", [
+
+            Log::info('ImageOptimizationService: Image optimisée', [
                 'media_id' => $mediaFile->id,
                 'original_size' => $originalSize,
                 'new_size' => $newSize,
                 'saved' => $savedBytes,
                 'saved_percent' => $savedPercent,
             ]);
-            
+
             return true;
-        } catch (\Exception $e) {
-            Log::error("ImageOptimizationService: Erreur lors de l'optimisation du MediaFile", [
+        } catch (\Throwable $e) {
+            Log::error('ImageOptimizationService: Erreur lors de l\'optimisation du MediaFile', [
                 'media_id' => $mediaFile->id,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
 
     /**
-     * Optimise une image
-     * 
-     * @return string|null Retourne le nouveau chemin relatif si conversion WebP, null sinon
+     * Rotation manuelle d'une image (gauche/droite) + régénération des conversions.
+     */
+    public function rotateMediaFile(MediaFile $mediaFile, string $direction = 'right'): bool
+    {
+        if (! $mediaFile->isImage()) {
+            return false;
+        }
+
+        $direction = $direction === 'left' ? 'left' : 'right';
+
+        try {
+            $disk = $mediaFile->disk;
+            $relativePath = $mediaFile->path;
+            $absolutePath = Storage::disk($disk)->path($relativePath);
+
+            if (! file_exists($absolutePath)) {
+                return false;
+            }
+
+            $angle = $direction === 'left' ? 90 : -90;
+
+            if (class_exists(\Intervention\Image\ImageManager::class)) {
+                $manager = new \Intervention\Image\ImageManager(
+                    new \Intervention\Image\Drivers\Gd\Driver()
+                );
+
+                $image = $manager->read($absolutePath);
+                $image->rotate($angle);
+                $image->save($absolutePath, $this->quality);
+            } else {
+                $imageInfo = @getimagesize($absolutePath);
+                if (! $imageInfo) {
+                    return false;
+                }
+
+                $sourceType = $imageInfo[2];
+
+                $sourceImage = match ($sourceType) {
+                    IMAGETYPE_JPEG => @imagecreatefromjpeg($absolutePath),
+                    IMAGETYPE_PNG => @imagecreatefrompng($absolutePath),
+                    IMAGETYPE_GIF => @imagecreatefromgif($absolutePath),
+                    IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($absolutePath) : null,
+                    default => null,
+                };
+
+                if (! $sourceImage) {
+                    return false;
+                }
+
+                $bgColor = imagecolorallocatealpha($sourceImage, 0, 0, 0, 127);
+                $rotated = imagerotate($sourceImage, -$angle, $bgColor);
+                imagesavealpha($rotated, true);
+
+                switch ($sourceType) {
+                    case IMAGETYPE_JPEG:
+                        imagejpeg($rotated, $absolutePath, $this->quality);
+                        break;
+                    case IMAGETYPE_PNG:
+                        imagepng($rotated, $absolutePath, 9);
+                        break;
+                    case IMAGETYPE_GIF:
+                        imagegif($rotated, $absolutePath);
+                        break;
+                    case IMAGETYPE_WEBP:
+                        if (function_exists('imagewebp')) {
+                            imagewebp($rotated, $absolutePath, $this->quality);
+                        }
+                        break;
+                }
+
+                imagedestroy($sourceImage);
+                imagedestroy($rotated);
+            }
+
+            $imageInfo = @getimagesize($absolutePath);
+            if ($imageInfo) {
+                $mediaFile->width = $imageInfo[0];
+                $mediaFile->height = $imageInfo[1];
+            }
+            $mediaFile->size = filesize($absolutePath);
+            $mediaFile->save();
+
+            if ($mediaFile->conversions()->exists()) {
+                $conversionService = app(MediaConversionService::class);
+                foreach ($mediaFile->conversions as $conversion) {
+                    $conversionService->regenerate($conversion);
+                }
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('ImageOptimizationService: Erreur lors de la rotation de l\'image', [
+                'media_id' => $mediaFile->id,
+                'direction' => $direction,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Optimise une image pendant le pipeline d'upload.
+     *
+     * @return string|null Chemin relatif du nouveau fichier si conversion WebP, sinon null.
      */
     public function optimize(string $filePath, string $mimeType, ?string $disk = null): ?string
     {
@@ -107,78 +210,69 @@ class ImageOptimizationService
     }
 
     /**
-     * Optimise une image (méthode interne)
-     * 
-     * @param string $filePath Chemin relatif du fichier
-     * @param string $mimeType Type MIME
-     * @param string|null $disk Disque de storage
-     * @param bool $force Forcer l'optimisation même si auto_optimize est false
-     * @return string|null Retourne le nouveau chemin relatif si conversion WebP, null sinon
+     * Coeur de l'optimisation (appelée à l'upload et manuellement).
      */
     protected function optimizeFile(string $filePath, string $mimeType, ?string $disk = null, bool $force = false): ?string
     {
-        if (!$this->enabled || (!$this->autoOptimize && !$force)) {
+        if (! $this->enabled || (! $this->autoOptimize && ! $force)) {
             return null;
         }
 
-        if (!str_starts_with($mimeType, 'image/')) {
+        if (! str_starts_with($mimeType, 'image/')) {
             return null;
         }
 
         try {
-            // Si c'est un chemin de storage, récupérer le chemin absolu
             $absolutePath = $this->getAbsolutePath($filePath, $disk);
-            
-            if (!file_exists($absolutePath)) {
+
+            if (! file_exists($absolutePath)) {
                 Log::warning("ImageOptimizationService: Fichier introuvable: {$absolutePath}");
+
                 return null;
             }
 
-            // Redimensionner si nécessaire
-            $this->resizeIfNeeded($absolutePath, $mimeType);
+            $this->resizeIfNeeded($absolutePath);
 
-            // Gérer l'orientation EXIF
-            $this->fixOrientation($absolutePath, $mimeType);
-
-            // Convertir en WebP si configuré
             $newRelativePath = null;
             if ($this->convertToWebp && $this->shouldConvertToWebp($mimeType)) {
                 $newRelativePath = $this->convertToWebp($filePath, $absolutePath, $disk);
             }
 
-            // Optimiser avec Spatie Image Optimizer (sur le fichier final)
-            $finalPath = $newRelativePath ? $this->getAbsolutePath($newRelativePath, $disk) : $absolutePath;
-            $this->optimizeWithSpatie($finalPath, $mimeType);
+            $finalAbsolutePath = $newRelativePath
+                ? $this->getAbsolutePath($newRelativePath, $disk)
+                : $absolutePath;
+
+            $this->optimizeWithSpatie($finalAbsolutePath, $mimeType);
 
             return $newRelativePath;
-        } catch (\Exception $e) {
-            Log::error("ImageOptimizationService: Erreur lors de l'optimisation", [
+        } catch (\Throwable $e) {
+            Log::error('ImageOptimizationService: Erreur lors de l\'optimisation', [
                 'file' => $filePath,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
 
     /**
-     * Redimensionne l'image si elle dépasse les dimensions max
+     * Redimensionne l'image si elle dépasse les dimensions max.
      */
-    protected function resizeIfNeeded(string $filePath, string $mimeType): void
+    protected function resizeIfNeeded(string $filePath): void
     {
-        if (!$this->maxWidth && !$this->maxHeight) {
+        if (! $this->maxWidth && ! $this->maxHeight) {
             return;
         }
 
         try {
             $imageInfo = @getimagesize($filePath);
-            if (!$imageInfo) {
+            if (! $imageInfo) {
                 return;
             }
 
             $currentWidth = $imageInfo[0];
             $currentHeight = $imageInfo[1];
 
-            // Vérifier si un redimensionnement est nécessaire
             $needsResize = false;
             $newWidth = $currentWidth;
             $newHeight = $currentHeight;
@@ -197,28 +291,24 @@ class ImageOptimizationService
                 $newWidth = (int) ($this->maxHeight * $ratio);
             }
 
-            if (!$needsResize) {
+            if (! $needsResize) {
                 return;
             }
 
-            // Utiliser Intervention Image si disponible, sinon GD
             if (class_exists(\Intervention\Image\ImageManager::class)) {
-                $this->resizeWithIntervention($filePath, $newWidth, $newHeight, $mimeType);
+                $this->resizeWithIntervention($filePath, $newWidth, $newHeight);
             } else {
-                $this->resizeWithGD($filePath, $newWidth, $newHeight, $mimeType);
+                $this->resizeWithGD($filePath, $newWidth, $newHeight);
             }
-        } catch (\Exception $e) {
-            Log::warning("ImageOptimizationService: Erreur lors du redimensionnement", [
+        } catch (\Throwable $e) {
+            Log::warning('ImageOptimizationService: Erreur lors du redimensionnement', [
                 'file' => $filePath,
                 'error' => $e->getMessage(),
             ]);
         }
     }
 
-    /**
-     * Redimensionne avec Intervention Image
-     */
-    protected function resizeWithIntervention(string $filePath, int $width, int $height, string $mimeType): void
+    protected function resizeWithIntervention(string $filePath, int $width, int $height): void
     {
         $manager = new \Intervention\Image\ImageManager(
             new \Intervention\Image\Drivers\Gd\Driver()
@@ -226,18 +316,15 @@ class ImageOptimizationService
 
         $image = $manager->read($filePath);
         $image->scale($width, $height);
-        // Utiliser une qualité légèrement réduite pour le redimensionnement (plus de compression)
+
         $saveQuality = max(75, $this->quality - 5);
         $image->save($filePath, $saveQuality);
     }
 
-    /**
-     * Redimensionne avec GD natif
-     */
-    protected function resizeWithGD(string $filePath, int $width, int $height, string $mimeType): void
+    protected function resizeWithGD(string $filePath, int $width, int $height): void
     {
-        $imageInfo = getimagesize($filePath);
-        if (!$imageInfo) {
+        $imageInfo = @getimagesize($filePath);
+        if (! $imageInfo) {
             return;
         }
 
@@ -245,23 +332,20 @@ class ImageOptimizationService
         $sourceHeight = $imageInfo[1];
         $sourceType = $imageInfo[2];
 
-        // Créer l'image source
         $sourceImage = match ($sourceType) {
-            IMAGETYPE_JPEG => imagecreatefromjpeg($filePath),
-            IMAGETYPE_PNG => imagecreatefrompng($filePath),
-            IMAGETYPE_GIF => imagecreatefromgif($filePath),
-            IMAGETYPE_WEBP => imagecreatefromwebp($filePath),
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($filePath),
+            IMAGETYPE_PNG => @imagecreatefrompng($filePath),
+            IMAGETYPE_GIF => @imagecreatefromgif($filePath),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($filePath) : null,
             default => null,
         };
 
-        if (!$sourceImage) {
+        if (! $sourceImage) {
             return;
         }
 
-        // Créer la nouvelle image
         $newImage = imagecreatetruecolor($width, $height);
 
-        // Préserver la transparence pour PNG et GIF
         if ($sourceType === IMAGETYPE_PNG || $sourceType === IMAGETYPE_GIF) {
             imagealphablending($newImage, false);
             imagesavealpha($newImage, true);
@@ -269,225 +353,166 @@ class ImageOptimizationService
             imagefill($newImage, 0, 0, $transparent);
         }
 
-        // Redimensionner
         imagecopyresampled(
             $newImage,
             $sourceImage,
-            0, 0, 0, 0,
-            $width, $height,
-            $sourceWidth, $sourceHeight
+            0,
+            0,
+            0,
+            0,
+            $width,
+            $height,
+            $sourceWidth,
+            $sourceHeight,
         );
 
-        // Sauvegarder avec qualité optimisée pour le web
-        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-        $saveQuality = max(75, $this->quality - 5); // Réduire légèrement pour plus de compression
-        match (strtolower($extension)) {
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $saveQuality = max(75, $this->quality - 5);
+
+        match ($extension) {
             'jpg', 'jpeg' => imagejpeg($newImage, $filePath, $saveQuality),
             'png' => imagepng($newImage, $filePath, 9),
-            'webp' => imagewebp($newImage, $filePath, $saveQuality),
+            'webp' => function_exists('imagewebp') ? imagewebp($newImage, $filePath, $saveQuality) : null,
             'gif' => imagegif($newImage, $filePath),
             default => imagejpeg($newImage, $filePath, $saveQuality),
         };
 
-        // Libérer la mémoire
         imagedestroy($sourceImage);
         imagedestroy($newImage);
     }
 
-    /**
-     * Corrige l'orientation EXIF
-     */
-    protected function fixOrientation(string $filePath, string $mimeType): void
-    {
-        if (!function_exists('exif_read_data')) {
-            return;
-        }
-
-        try {
-            $exif = @exif_read_data($filePath);
-            if (!$exif || !isset($exif['Orientation'])) {
-                return;
-            }
-
-            $orientation = $exif['Orientation'];
-            if ($orientation === 1) {
-                return; // Pas de rotation nécessaire
-            }
-
-            // Utiliser Intervention Image si disponible
-            if (class_exists(\Intervention\Image\ImageManager::class)) {
-                $manager = new \Intervention\Image\ImageManager(
-                    new \Intervention\Image\Drivers\Gd\Driver()
-                );
-                $image = $manager->read($filePath);
-                
-                $image->orientate();
-                $image->save($filePath, $this->quality);
-            }
-        } catch (\Exception $e) {
-            // Ignorer les erreurs d'orientation
-        }
-    }
-
-    /**
-     * Convertit l'image en WebP
-     * 
-     * @param string $relativePath Chemin relatif du fichier original
-     * @param string $absolutePath Chemin absolu du fichier original
-     * @param string|null $disk Disque de storage
-     * @return string|null Chemin relatif du nouveau fichier WebP
-     */
     protected function convertToWebp(string $relativePath, string $absolutePath, ?string $disk = null): ?string
     {
-        if (!function_exists('imagewebp')) {
-            Log::warning("ImageOptimizationService: imagewebp() non disponible");
+        if (! function_exists('imagewebp')) {
+            Log::warning('ImageOptimizationService: imagewebp() non disponible');
+
             return null;
         }
 
         try {
-            $imageInfo = getimagesize($absolutePath);
-            if (!$imageInfo) {
+            $imageInfo = @getimagesize($absolutePath);
+            if (! $imageInfo) {
                 return null;
             }
 
             $sourceType = $imageInfo[2];
+
             $sourceImage = match ($sourceType) {
-                IMAGETYPE_JPEG => imagecreatefromjpeg($absolutePath),
-                IMAGETYPE_PNG => imagecreatefrompng($absolutePath),
+                IMAGETYPE_JPEG => @imagecreatefromjpeg($absolutePath),
+                IMAGETYPE_PNG => @imagecreatefrompng($absolutePath),
                 default => null,
             };
 
-            if (!$sourceImage) {
+            if (! $sourceImage) {
                 return null;
             }
 
-            // Générer le nouveau chemin relatif
             $newRelativePath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $relativePath);
             $newAbsolutePath = $this->getAbsolutePath($newRelativePath, $disk);
-            
-            // Créer le répertoire si nécessaire
+
             $dir = dirname($newAbsolutePath);
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 mkdir($dir, 0755, true);
             }
-            
-            // Créer l'image WebP avec qualité optimisée
-            $webpQuality = max(75, $this->quality - 5); // Légèrement réduite pour plus de compression
+
+            $webpQuality = max(75, $this->quality - 5);
             imagewebp($sourceImage, $newAbsolutePath, $webpQuality);
             imagedestroy($sourceImage);
 
-            // Supprimer l'ancien fichier si on ne préserve pas l'original
-            if (!$this->preserveOriginal) {
+            if (! $this->preserveOriginal) {
                 @unlink($absolutePath);
-                // Supprimer aussi depuis le storage si c'est un disque
                 if ($disk) {
                     try {
                         Storage::disk($disk)->delete($relativePath);
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         // Ignorer
                     }
                 }
             }
 
             return $newRelativePath;
-        } catch (\Exception $e) {
-            Log::error("ImageOptimizationService: Erreur lors de la conversion WebP", [
+        } catch (\Throwable $e) {
+            Log::error('ImageOptimizationService: Erreur lors de la conversion WebP', [
                 'file' => $relativePath,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
 
-    /**
-     * Vérifie si on doit convertir en WebP
-     */
     protected function shouldConvertToWebp(string $mimeType): bool
     {
-        return in_array($mimeType, ['image/jpeg', 'image/png']) && $this->convertToWebp;
+        return in_array($mimeType, ['image/jpeg', 'image/png'], true) && $this->convertToWebp;
     }
 
-    /**
-     * Optimise avec Spatie Image Optimizer
-     */
     protected function optimizeWithSpatie(string $filePath, string $mimeType): void
     {
-        if (!class_exists(\Spatie\ImageOptimizer\OptimizerChainFactory::class)) {
+        if (! class_exists(\Spatie\ImageOptimizer\OptimizerChainFactory::class)) {
             return;
         }
 
         try {
-            // Créer une chaîne d'optimisation personnalisée avec des paramètres agressifs
             $optimizerChain = new \Spatie\ImageOptimizer\OptimizerChain();
-            
-            // Configuration pour JPEG avec compression agressive
-            if (in_array($mimeType, ['image/jpeg', 'image/jpg'])) {
-                // Utiliser une qualité légèrement inférieure pour jpegoptim (plus agressif)
-                $jpegQuality = max(70, $this->quality - 5); // Réduire de 5 points pour plus de compression
+
+            if (in_array($mimeType, ['image/jpeg', 'image/jpg'], true)) {
+                $jpegQuality = max(70, $this->quality - 5);
+
                 $optimizerChain->addOptimizer(new \Spatie\ImageOptimizer\Optimizers\Jpegoptim([
-                    '--max=' . $jpegQuality, // Qualité max (légèrement réduite pour plus de compression)
-                    '--strip-all', // Supprimer toutes les métadonnées
-                    '--all-progressive', // JPEG progressif (meilleure compression)
+                    '--max='.$jpegQuality,
+                    '--strip-all',
+                    '--all-progressive',
                 ]));
             }
-            
-            // Configuration pour PNG
+
             if ($mimeType === 'image/png') {
-                // Utiliser pngquant d'abord (meilleure compression)
                 $optimizerChain->addOptimizer(new \Spatie\ImageOptimizer\Optimizers\Pngquant([
-                    '--quality=' . max(65, $this->quality - 10) . '-' . $this->quality, // Plus agressif
+                    '--quality='.max(65, $this->quality - 10).'-'.$this->quality,
                     '--force',
                 ]));
-                // Puis optipng pour optimiser davantage
+
                 $optimizerChain->addOptimizer(new \Spatie\ImageOptimizer\Optimizers\Optipng([
-                    '-i0', // Pas d'interlacing
-                    '-o2', // Niveau d'optimisation 2 (bon compromis vitesse/compression)
+                    '-i0',
+                    '-o2',
                     '-quiet',
                 ]));
             }
-            
-            // Configuration pour WebP
+
             if ($mimeType === 'image/webp') {
                 $optimizerChain->addOptimizer(new \Spatie\ImageOptimizer\Optimizers\Cwebp([
-                    '-m 6', // Méthode de compression (0-6, 6 = meilleure compression)
-                    '-pass 10', // Nombre de passes (plus = meilleure compression)
-                    '-mt', // Multi-threading
-                    '-q ' . $this->quality, // Qualité
+                    '-m 6',
+                    '-pass 10',
+                    '-mt',
+                    '-q '.$this->quality,
                 ]));
             }
-            
-            // Si aucune configuration spécifique, utiliser la chaîne par défaut
+
             if (count($optimizerChain->getOptimizers()) === 0) {
                 $optimizerChain = \Spatie\ImageOptimizer\OptimizerChainFactory::create();
             }
-            
+
             $optimizerChain->optimize($filePath);
-        } catch (\Exception $e) {
-            // Si les outils CLI ne sont pas installés, on ignore silencieusement
-            // L'optimisation de base (redimensionnement, etc.) a déjà été faite
-            Log::debug("ImageOptimizationService: Spatie Image Optimizer non disponible", [
+        } catch (\Throwable $e) {
+            Log::debug('ImageOptimizationService: Spatie Image Optimizer non disponible', [
                 'file' => $filePath,
                 'error' => $e->getMessage(),
             ]);
         }
     }
 
-    /**
-     * Récupère le chemin absolu d'un fichier
-     */
     protected function getAbsolutePath(string $filePath, ?string $disk = null): string
     {
         if ($disk) {
             return Storage::disk($disk)->path($filePath);
         }
 
-        // Si c'est déjà un chemin absolu
         if (str_starts_with($filePath, '/')) {
             return $filePath;
         }
 
-        // Sinon, essayer avec le disque par défaut
         $defaultDisk = config('media-library-pro.storage.disk', 'public');
+
         return Storage::disk($defaultDisk)->path($filePath);
     }
 }
+
