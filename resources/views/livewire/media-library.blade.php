@@ -31,84 +31,88 @@
 
         <div class="flex items-center gap-2">
             @if(!$pickerMode)
-                @if(config('media-library-pro.actions.create_folder', true) && config('media-library-pro.folders.enabled', true))
-                    <x-filament::button
-                        wire:click="openCreateFolderModal"
-                        size="sm"
-                        color="success"
-                        outlined
-                    >
-                        <x-slot name="icon">
-                            <x-heroicon-o-folder-plus class="w-4 h-4" />
-                        </x-slot>
-                        Créer un dossier
-                    </x-filament::button>
-                @endif
-                <x-filament::button
-                    wire:click="openUploadModal"
-                    size="sm"
-                    color="primary"
-                >
-                    <x-slot name="icon">
-                        <x-heroicon-o-plus class="w-4 h-4" />
-                    </x-slot>
-                    Ajouter des fichiers
-                </x-filament::button>
-            @endif
-            
-            @if($selectMode && !empty($selectedItems))
-                <div x-data="{ open: false }" class="relative">
-                    <x-filament::button
-                        x-on:click="open = !open"
-                        size="sm"
-                        color="primary"
-                        outlined
-                    >
-                        Actions ({{ count($selectedItems) }})
-                    </x-filament::button>
-                    <div
-                        x-show="open"
-                        x-cloak
-                        x-on:click.away="open = false"
-                        class="absolute right-0 mt-2 w-48 fi-dropdown-panel rounded-lg bg-white shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 z-10"
-                    >
-                        <div class="py-1">
-                            <button
-                                wire:click="bulkDelete"
-                                wire:confirm="Êtes-vous sûr de vouloir supprimer les médias sélectionnés ?"
-                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            >
-                                Supprimer
-                            </button>
+                @if(!empty($selectedMediaIds))
+                    {{-- Toolbar contextuelle quand sélection active --}}
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ count($selectedMediaIds) }} {{ count($selectedMediaIds) === 1 ? 'média sélectionné' : 'médias sélectionnés' }}
+                    </span>
+                    <div x-data="{ open: false }" class="relative">
+                        <x-filament::button
+                            x-on:click="open = !open"
+                            size="sm"
+                            color="primary"
+                            outlined
+                        >
+                            Actions
+                        </x-filament::button>
+                        <div
+                            x-show="open"
+                            x-cloak
+                            x-on:click.away="open = false"
+                            class="absolute right-0 mt-2 w-48 fi-dropdown-panel rounded-lg bg-white shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 z-10"
+                        >
+                            <div class="py-1">
+                                <button
+                                    wire:click="bulkDelete"
+                                    wire:confirm="Êtes-vous sûr de vouloir supprimer les médias sélectionnés ?"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                    Supprimer
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <x-filament::button
-                    wire:click="selectAll"
-                    size="sm"
-                    color="gray"
-                    outlined
-                >
-                    Tout sélectionner
-                </x-filament::button>
-                <x-filament::button
-                    wire:click="deselectAll"
-                    size="sm"
-                    color="gray"
-                    outlined
-                >
-                    Tout désélectionner
-                </x-filament::button>
+                    <x-filament::button
+                        wire:click="selectAll"
+                        size="sm"
+                        color="gray"
+                        outlined
+                    >
+                        Tout sélectionner
+                    </x-filament::button>
+                    <x-filament::button
+                        wire:click="selectAllInPage"
+                        size="sm"
+                        color="gray"
+                        outlined
+                    >
+                        Sélectionner tout dans la page
+                    </x-filament::button>
+                    <x-filament::button
+                        wire:click="clearSelection"
+                        size="sm"
+                        color="gray"
+                        outlined
+                    >
+                        Annuler
+                    </x-filament::button>
+                @else
+                    {{-- Toolbar par défaut --}}
+                    @if(config('media-library-pro.actions.create_folder', true) && config('media-library-pro.folders.enabled', true))
+                        <x-filament::button
+                            wire:click="openCreateFolderModal"
+                            size="sm"
+                            color="success"
+                            outlined
+                        >
+                            <x-slot name="icon">
+                                <x-heroicon-o-folder-plus class="w-4 h-4" />
+                            </x-slot>
+                            Créer un dossier
+                        </x-filament::button>
+                    @endif
+                    <x-filament::button
+                        wire:click="openUploadModal"
+                        size="sm"
+                        color="primary"
+                    >
+                        <x-slot name="icon">
+                            <x-heroicon-o-plus class="w-4 h-4" />
+                        </x-slot>
+                        Ajouter des fichiers
+                    </x-filament::button>
+                @endif
             @endif
-            <x-filament::button
-                wire:click="toggleSelectMode"
-                size="sm"
-                :color="$selectMode ? 'danger' : 'gray'"
-                outlined
-            >
-                {{ $selectMode ? 'Annuler' : 'Sélectionner' }}
-            </x-filament::button>
         </div>
     </div>
 
@@ -212,39 +216,32 @@
     {{-- Media Content --}}
     @if($view === 'grid')
         {{-- Grid View --}}
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+        <div
+            class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4"
+            x-data="mediaGridSelection($wire)"
+        >
             @forelse($media as $item)
-                <div 
-                        class="relative rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden border border-gray-200 dark:border-gray-700 @if($pickerMode) cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all @elseif(!$selectMode) cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all @endif"
-                    @if($pickerMode)
-                        data-media-id="{{ $item->uuid }}"
-                        onclick="window.dispatchEvent(new CustomEvent('media-library-picker-select', { detail: { mediaId: '{{ $item->uuid }}' } }))"
-                    @endif
+                @php $isSelected = in_array($item->id, $selectedMediaIds); @endphp
+                <div
+                    class="media-card group relative rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden border transition-all cursor-pointer {{ $isSelected ? 'ring-2 ring-primary-500 border-primary-500 dark:ring-primary-400 dark:border-primary-400' : 'border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-primary-500' }}"
+                    data-media-id="{{ $item->id }}"
+                    x-on:click="handleCardClick($event, {{ $item->id }}, null)"
+                    x-on:dblclick="handleCardDblClick($event, {{ $item->id }}, '{{ $item->uuid }}')"
                 >
-                    @if($selectMode)
-                            <div class="absolute top-2 left-2 z-10" @click.stop>
-                            <input
-                                type="checkbox"
-                                wire:click="toggleSelection('{{ $item->uuid }}')"
-                                @checked(in_array($item->uuid, $selectedItems))
-                                class="fi-checkbox-input rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                            />
-                        </div>
-                    @endif
-                    @if($pickerMode && !$selectMode)
-                        <div class="absolute top-2 left-2 z-10">
-                            <div class="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                ✓
-                            </div>
+                    @if(!$pickerMode)
+                        <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+                            <button
+                                type="button"
+                                wire:click="openDetailModal('{{ $item->uuid }}')"
+                                class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400"
+                                title="Détails"
+                            >
+                                <x-heroicon-o-ellipsis-vertical class="w-5 h-5" />
+                            </button>
                         </div>
                     @endif
 
-                        <div 
-                            class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden @if($pickerMode) cursor-pointer hover:opacity-90 transition-opacity @elseif(!$selectMode) cursor-pointer @endif"
-                                @if(!$pickerMode && !$selectMode)
-                                    wire:click="openDetailModal('{{ $item->uuid }}')"
-                                @endif
-                        >
+                    <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden pointer-events-none group">
                             @if(str_starts_with($item->mime_type, 'image/'))
                                 @php
                                     // Utiliser la route publique pour servir les images (accessible depuis le frontend)
@@ -258,7 +255,7 @@
                                 <img
                                     src="{{ $imageUrl }}"
                                     alt="{{ $item->file_name }}"
-                                    class="w-full h-full object-cover @if(!$pickerMode && !$selectMode) pointer-events-none @endif"
+                                    class="w-full h-full object-cover"
                                     loading="lazy"
                                     onerror="console.error('Failed to load image:', this.src); this.style.display='none';"
                                 />
@@ -275,12 +272,15 @@
                         @endif
                     </div>
 
-                    <div class="p-3 border-t border-gray-200 dark:border-white/10">
-                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title="{{ $item->file_name }}">
+                    <div class="p-3 border-t border-gray-200 dark:border-white/10 flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            class="fi-checkbox-input rounded border-gray-300 text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                            @checked($isSelected)
+                            x-on:click.stop="const m = $event.shiftKey ? 'shift' : ($event.ctrlKey || $event.metaKey ? 'ctrl' : null); $wire.toggleSelect({{ $item->id }}, m)"
+                        />
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate min-w-0" title="{{ $item->file_name }}">
                             {{ Str::limit($item->file_name, 30) }}
-                        </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {{ $item->getFormattedSize() }}
                         </p>
                     </div>
                 </div>
@@ -299,11 +299,11 @@
                         <table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">
                             <thead class="divide-y divide-gray-200 dark:divide-white/5">
                                 <tr class="bg-gray-50 dark:bg-white/5">
-                                    @if($selectMode)
+                                    @if(!$pickerMode)
                                         <th scope="col" class="fi-ta-header-cell px-3 py-3.5 sm:px-6">
                                             <input
                                                 type="checkbox"
-                                                wire:click="selectAll"
+                                                wire:click="selectAllInPage"
                                                 class="fi-checkbox-input rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                                             />
                                         </th>
@@ -338,7 +338,7 @@
                                             <span class="fi-ta-header-cell-label text-xs font-semibold text-gray-950 dark:text-white sm:text-sm">Date</span>
                                         </button>
                                     </th>
-                                    @if(!$pickerMode && !$selectMode)
+                                    @if(!$pickerMode)
                                         <th scope="col" class="fi-ta-header-cell px-3 py-3.5 sm:px-6">
                                             <span class="fi-ta-header-cell-label text-xs font-semibold text-gray-950 dark:text-white sm:text-sm">Actions</span>
                                         </th>
@@ -347,14 +347,15 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">
                                 @forelse($media as $item)
-                                    <tr class="fi-ta-row transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
-                                        @if($selectMode)
-                                            <td class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
+                                    @php $isSelected = in_array($item->id, $selectedMediaIds); @endphp
+                                    <tr class="fi-ta-row transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5 {{ $isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : '' }}">
+                                        @if(!$pickerMode)
+                                            <td class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3" x-data>
                                                 <div class="px-3 py-4 sm:px-6">
                                                     <input
                                                         type="checkbox"
-                                                        wire:click="toggleSelection('{{ $item->uuid }}')"
-                                                        @checked(in_array($item->uuid, $selectedItems))
+                                                        @checked($isSelected)
+                                                        x-on:click="const m = $event.shiftKey ? 'shift' : ($event.ctrlKey || $event.metaKey ? 'ctrl' : null); $wire.toggleSelect({{ $item->id }}, m)"
                                                         class="fi-checkbox-input rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                                                     />
                                                 </div>
@@ -409,7 +410,7 @@
                                                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ $item->created_at->format('d/m/Y H:i') }}</span>
                                             </div>
                                         </td>
-                                        @if(!$pickerMode && !$selectMode)
+                                        @if(!$pickerMode)
                                             <td class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
                                                 <div class="px-3 py-4 sm:px-6">
                                                     <button
@@ -427,7 +428,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $selectMode ? '7' : ($pickerMode ? '6' : '7') }}" class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
+                                        <td colspan="{{ $pickerMode ? '6' : '8' }}" class="fi-ta-cell p-0 first-of-type:ps-1 last-of-type:pe-1 sm:first-of-type:ps-3 sm:last-of-type:pe-3">
                                             <div class="px-3 py-12 sm:px-6 text-center">
                                                 <p class="text-sm text-gray-500 dark:text-gray-400">Aucun média trouvé</p>
                                             </div>

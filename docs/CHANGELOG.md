@@ -5,6 +5,44 @@ Tous les changements notables de ce package seront documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.2.0] - 2025-03-09
+
+### ✨ Ajouté - Refonte UX de la sélection
+
+#### État de sélection unifié
+- **`selectedMediaIds`** et **`lastSelectedId`** : état partagé entre bibliothèque et picker
+- Méthodes Livewire : `toggleSelect()`, `rangeSelect()`, `clearSelection()`, `selectAllInPage()`, `selectAll()`, `applyDragSelection()`, `confirmSelection()`
+
+#### Interactions sur les cartes média
+- **Clic** : sélectionne/désélectionne un média
+- **Ctrl/Cmd + clic** : ajoute ou retire de la sélection
+- **Shift + clic** : sélection par plage (range select)
+- **Double-clic** : bibliothèque → ouvre les détails ; picker → valide et insère
+- **Checkbox** toujours visible sur chaque carte
+
+#### Toolbar contextuelle (bibliothèque)
+- Affichage dès qu’au moins un média est sélectionné
+- Compteur « X médias sélectionnés »
+- Actions groupées (menu déroulant : Supprimer)
+- Boutons : « Tout sélectionner », « Sélectionner tout dans la page », « Annuler »
+- Suppression du bouton « Sélectionner » (remplacé par la toolbar)
+
+#### Drag-select
+- Sélection rectangulaire en glissant sur la grille (bibliothèque et picker)
+- Ctrl/Cmd au relâchement pour ajouter à la sélection
+- Implémentation Alpine.js dans `alpine-init.blade.php`
+
+#### Picker (MediaPickerUnified)
+- Barre en bas : compteur, boutons « Annuler » et « Insérer »
+- Double-clic sur une carte pour valider et insérer
+- Comportement aligné avec la bibliothèque globale
+
+#### Styles
+- Classes `.media-card` et `.media-drag-select-box` dans `media-library-pro.css`
+- Surlignage et feedback visuel pour la sélection
+
+---
+
 ## [1.1.0] - 2025-01-15
 
 ### ✨ Ajouté - Phase 1 : Actions configurables et gestion des dossiers

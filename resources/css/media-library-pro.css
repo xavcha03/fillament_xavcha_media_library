@@ -3,6 +3,27 @@
 /* Ces styles complètent les classes Filament pré-compilées (fi-*) */
 
 /* ============================================
+   SÉLECTION ET DRAG-SELECT
+   ============================================ */
+
+.media-drag-select-box {
+    border-radius: 4px;
+    transition: none;
+}
+
+.media-card {
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.media-card.ring-2 {
+    box-shadow: 0 0 0 2px rgb(245 158 11 / 0.5);
+}
+
+.dark .media-card.ring-2 {
+    box-shadow: 0 0 0 2px rgb(251 191 36 / 0.5);
+}
+
+/* ============================================
    CLASSES CRITIQUES POUR LA MODALE
    ============================================ */
 

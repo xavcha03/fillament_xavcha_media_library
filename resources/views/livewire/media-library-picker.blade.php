@@ -325,14 +325,17 @@
         </div>
 
         @if($media->count() > 0)
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+                x-data="mediaPickerGridSelection($wire)"
+            >
                 @foreach($media as $item)
-                    @php
-                        $isItemSelected = $this->isSelected($item->id);
-                    @endphp
+                    @php $isItemSelected = $this->isSelected($item->id); @endphp
                     <div
-                        wire:click="selectMedia('{{ $item->uuid }}')"
-                        class="relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all {{ $isItemSelected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600' }}"
+                        class="media-card relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all {{ $isItemSelected ? 'border-primary-500 ring-2 ring-primary-500' : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600' }}"
+                        data-media-id="{{ $item->id }}"
+                        x-on:click="handleCardClick($event, {{ $item->id }}, '{{ $item->uuid }}')"
+                        x-on:dblclick="handleCardDblClick($event)"
                     >
                         @if($item->isImage())
                             <div class="aspect-square bg-gray-100 dark:bg-gray-800">
@@ -350,17 +353,15 @@
                                 </svg>
                             </div>
                         @endif
-                        
-                        @if($isItemSelected)
-                            <div class="absolute top-2 right-2 bg-primary-500 text-white rounded-full p-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        @endif
 
-                        <div class="p-2 bg-white dark:bg-gray-800">
-                            <p class="text-xs text-gray-600 dark:text-gray-400 truncate" title="{{ $item->file_name }}">
+                        <div class="p-2 bg-white dark:bg-gray-800 flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                class="fi-checkbox-input rounded border-gray-300 text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                                @checked($isItemSelected)
+                                x-on:click.stop="const m = $event.shiftKey ? 'shift' : ($event.ctrlKey || $event.metaKey ? 'ctrl' : null); $wire.toggleSelect({{ $item->id }}, m)"
+                            />
+                            <p class="text-xs text-gray-600 dark:text-gray-400 truncate min-w-0" title="{{ $item->file_name }}">
                                 {{ Str::limit($item->file_name, 20) }}
                             </p>
                         </div>

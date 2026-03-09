@@ -198,6 +198,18 @@ grep -r "class=" packages/xavcha/fillament-xavcha-media-library/resources/views/
 - [ ] Tester dans le navigateur
 - [ ] Recompiler les assets : `ddev artisan view:clear && ddev artisan filament:assets`
 
+## 🎨 Classes pour la sélection et le drag-select
+
+Les cartes média et la zone de sélection rectangulaire utilisent des classes dédiées :
+
+| Classe | Usage |
+|--------|-------|
+| `.media-card` | Carte média dans la grille (transition, états hover/sélectionné) |
+| `.media-card.ring-2` | État sélectionné (bordure/ring coloré) |
+| `.media-drag-select-box` | Rectangle de sélection lors du drag-select (position fixe, z-index élevé) |
+
+Ces classes sont définies dans `resources/css/media-library-pro.css`. Si vous personnalisez l’apparence des cartes ou du rectangle de sélection, modifiez ces règles.
+
 ## 🎨 Exemple Complet : Zone de Drag & Drop
 
 ### Dans la vue Blade :

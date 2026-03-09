@@ -73,7 +73,7 @@ MediaPickerUnified::make('media_ids')
 MediaPickerUnified::make('image_ids')
     ->maxFileSize(5120) // 5MB en KB
     ->collection('images');
-``]
+```
 
 ### Collection
 

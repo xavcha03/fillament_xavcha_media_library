@@ -343,11 +343,38 @@ class EditProduct extends EditRecord
 
 ### 1. Sélection depuis la Bibliothèque
 
-- Ouvrez la modal en cliquant sur "Sélectionner des médias"
-- Parcourez la bibliothèque de médias existants
-- Cliquez sur une image pour la sélectionner/désélectionner
-- Les images sélectionnées apparaissent avec une bordure colorée
-- Filtrez par collection si nécessaire
+Ouvrez la modal en cliquant sur « Sélectionner des médias », puis parcourez la bibliothèque. La sélection utilise une UX moderne et cohérente entre la **bibliothèque globale** et le **picker** :
+
+#### Interactions sur les cartes média
+
+| Action | Effet |
+|--------|-------|
+| **Clic** | Sélectionne ou désélectionne le média |
+| **Ctrl/Cmd + clic** | Ajoute ou retire le média de la sélection (sans modifier les autres) |
+| **Shift + clic** | Sélectionne une plage entre le dernier média cliqué et celui-ci |
+| **Double-clic** | **Bibliothèque** : ouvre la modale de détails du média ; **Picker** : valide et insère la sélection immédiatement |
+
+#### Drag-select (sélection rectangulaire)
+
+- Maintenez le bouton gauche de la souris et glissez sur la grille pour dessiner un rectangle
+- Les médias dans le rectangle sont sélectionnés
+- **Ctrl/Cmd** pendant le relâchement : ajoute à la sélection existante ; sinon : remplace la sélection
+
+#### Toolbar contextuelle (bibliothèque uniquement)
+
+Dès qu’au moins un média est sélectionné, une toolbar s’affiche avec :
+
+- **Compteur** : « X média(s) sélectionné(s) »
+- **Actions** : menu déroulant (ex. Supprimer)
+- **Tout sélectionner** : sélectionne tous les médias de la bibliothèque
+- **Sélectionner tout dans la page** : sélectionne uniquement les médias visibles
+- **Annuler** : vide la sélection
+
+#### Picker (sélection de médias pour un formulaire)
+
+- **Barre en bas** : compteur de médias sélectionnés, boutons « Annuler » et « Insérer »
+- **Double-clic** sur une carte : valide et insère la sélection (équivalent au bouton « Insérer »)
+- Les cartes sélectionnées ont une bordure colorée et une checkbox cochée
 
 ### 2. Upload de Nouveaux Fichiers
 
@@ -363,9 +390,9 @@ class EditProduct extends EditRecord
 Deux méthodes pour supprimer des images :
 
 #### A. Dans la Modal (Désélection)
-- Cliquez sur une image déjà sélectionnée dans la bibliothèque
+- Cliquez sur une image déjà sélectionnée dans la bibliothèque (ou utilisez Ctrl/Cmd + clic)
 - L'image est désélectionnée
-- Cliquez sur "Valider" pour confirmer
+- Cliquez sur « Insérer » pour valider la sélection (picker) ou fermez la modal
 
 #### B. Avec la Croix Rouge (Suppression)
 - Cliquez sur la croix rouge (×) sur une image dans l'aperçu
@@ -374,7 +401,7 @@ Deux méthodes pour supprimer des images :
 
 ### 4. Validation Automatique
 
-- **Bouton "Valider" désactivé** : Si des fichiers sont sélectionnés mais pas encore uploadés, le bouton "Valider" est automatiquement désactivé
+- **Bouton « Insérer » désactivé** : Si des fichiers sont sélectionnés mais pas encore uploadés, le bouton « Insérer » est automatiquement désactivé
 - **Limites min/max** : Respect automatique des limites définies
 - **Types de fichiers** : Validation des types MIME acceptés
 

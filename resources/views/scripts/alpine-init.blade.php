@@ -1,5 +1,165 @@
 <script>
     document.addEventListener('alpine:init', () => {
+        Alpine.data('mediaGridSelection', (wire) => ({
+            lastClickTime: 0,
+            lastClickId: null,
+            dragStart: null,
+            dragBox: null,
+            init() {
+                this.$el.addEventListener('mousedown', (e) => this.onDragStart(e));
+                document.addEventListener('mousemove', (e) => this.onDragMove(e));
+                document.addEventListener('mouseup', (e) => this.onDragEnd(e));
+            },
+            onDragStart(e) {
+                if (e.button !== 0) return;
+                const card = e.target.closest('.media-card');
+                if (card && !e.target.closest('input[type="checkbox"]') && !e.target.closest('button')) {
+                    this.dragStart = { x: e.clientX, y: e.clientY };
+                }
+            },
+            onDragMove(e) {
+                if (!this.dragStart) return;
+                const dx = Math.abs(e.clientX - this.dragStart.x);
+                const dy = Math.abs(e.clientY - this.dragStart.y);
+                if (!this.dragBox && (dx > 5 || dy > 5)) {
+                    this.dragBox = document.createElement('div');
+                    this.dragBox.className = 'media-drag-select-box fixed border-2 border-primary-500 bg-primary-500/20 pointer-events-none z-50';
+                    document.body.appendChild(this.dragBox);
+                }
+                if (!this.dragBox) return;
+                const left = Math.min(this.dragStart.x, e.clientX);
+                const top = Math.min(this.dragStart.y, e.clientY);
+                const width = Math.abs(e.clientX - this.dragStart.x);
+                const height = Math.abs(e.clientY - this.dragStart.y);
+                this.dragBox.style.left = left + 'px';
+                this.dragBox.style.top = top + 'px';
+                this.dragBox.style.width = width + 'px';
+                this.dragBox.style.height = height + 'px';
+            },
+            onDragEnd(e) {
+                if (!this.dragStart) return;
+                if (this.dragBox) {
+                    this.dragBox.remove();
+                    this.dragBox = null;
+                    const rect = {
+                        left: Math.min(this.dragStart.x, e.clientX),
+                        top: Math.min(this.dragStart.y, e.clientY),
+                        right: Math.max(this.dragStart.x, e.clientX),
+                        bottom: Math.max(this.dragStart.y, e.clientY)
+                    };
+                    const cards = this.$el.querySelectorAll('.media-card');
+                    const ids = [];
+                    cards.forEach(card => {
+                        const r = card.getBoundingClientRect();
+                        if (rect.left < r.right && rect.right > r.left && rect.top < r.bottom && rect.bottom > r.top) {
+                            const id = card.getAttribute('data-media-id');
+                            if (id) ids.push(parseInt(id));
+                        }
+                    });
+                    if (ids.length > 0) {
+                        const mode = e.ctrlKey || e.metaKey ? 'add' : 'replace';
+                        wire.applyDragSelection(ids, mode);
+                    }
+                }
+                this.dragStart = null;
+            },
+            handleCardClick(event, mediaId, mediaUuid) {
+                if (this.dragStart) return;
+                const now = Date.now();
+                if (now - this.lastClickTime < 300 && this.lastClickId === mediaId) {
+                    return;
+                }
+                this.lastClickTime = now;
+                this.lastClickId = mediaId;
+                const mod = event.shiftKey ? 'shift' : (event.ctrlKey || event.metaKey ? 'ctrl' : null);
+                wire.toggleSelect(mediaId, mod);
+            },
+            handleCardDblClick(event, mediaId, mediaUuid) {
+                event.preventDefault();
+                this.lastClickTime = 0;
+                this.lastClickId = null;
+                if (mediaUuid) {
+                    wire.openDetailModal(mediaUuid);
+                }
+            }
+        }));
+
+        Alpine.data('mediaPickerGridSelection', (wire) => ({
+            lastClickTime: 0,
+            lastClickId: null,
+            dragStart: null,
+            dragBox: null,
+            init() {
+                this.$el.addEventListener('mousedown', (e) => this.onDragStart(e));
+                document.addEventListener('mousemove', (e) => this.onDragMove(e));
+                document.addEventListener('mouseup', (e) => this.onDragEnd(e));
+            },
+            onDragStart(e) {
+                if (e.button !== 0) return;
+                const card = e.target.closest('.media-card');
+                if (card && !e.target.closest('input[type="checkbox"]')) {
+                    this.dragStart = { x: e.clientX, y: e.clientY };
+                }
+            },
+            onDragMove(e) {
+                if (!this.dragStart) return;
+                const dx = Math.abs(e.clientX - this.dragStart.x);
+                const dy = Math.abs(e.clientY - this.dragStart.y);
+                if (!this.dragBox && (dx > 5 || dy > 5)) {
+                    this.dragBox = document.createElement('div');
+                    this.dragBox.className = 'media-drag-select-box fixed border-2 border-primary-500 bg-primary-500/20 pointer-events-none z-50';
+                    document.body.appendChild(this.dragBox);
+                }
+                if (!this.dragBox) return;
+                const left = Math.min(this.dragStart.x, e.clientX);
+                const top = Math.min(this.dragStart.y, e.clientY);
+                this.dragBox.style.left = left + 'px';
+                this.dragBox.style.top = top + 'px';
+                this.dragBox.style.width = Math.abs(e.clientX - this.dragStart.x) + 'px';
+                this.dragBox.style.height = Math.abs(e.clientY - this.dragStart.y) + 'px';
+            },
+            onDragEnd(e) {
+                if (!this.dragStart) return;
+                if (this.dragBox) {
+                    this.dragBox.remove();
+                    this.dragBox = null;
+                    const rect = {
+                        left: Math.min(this.dragStart.x, e.clientX),
+                        top: Math.min(this.dragStart.y, e.clientY),
+                        right: Math.max(this.dragStart.x, e.clientX),
+                        bottom: Math.max(this.dragStart.y, e.clientY)
+                    };
+                    const cards = this.$el.querySelectorAll('.media-card');
+                    const ids = [];
+                    cards.forEach(card => {
+                        const r = card.getBoundingClientRect();
+                        if (rect.left < r.right && rect.right > r.left && rect.top < r.bottom && rect.bottom > r.top) {
+                            const id = card.getAttribute('data-media-id');
+                            if (id) ids.push(parseInt(id));
+                        }
+                    });
+                    if (ids.length > 0) {
+                        const mode = e.ctrlKey || e.metaKey ? 'add' : 'replace';
+                        wire.applyDragSelection(ids, mode);
+                    }
+                }
+                this.dragStart = null;
+            },
+            handleCardClick(event, mediaId, mediaUuid) {
+                if (this.dragStart) return;
+                const now = Date.now();
+                if (now - this.lastClickTime < 300 && this.lastClickId === mediaId) return;
+                this.lastClickTime = now;
+                this.lastClickId = mediaId;
+                const mod = event.shiftKey ? 'shift' : (event.ctrlKey || event.metaKey ? 'ctrl' : null);
+                wire.toggleSelect(mediaId, mod);
+            },
+            handleCardDblClick(event) {
+                event.preventDefault();
+                wire.confirmSelection();
+            }
+        }));
+
         Alpine.data('mediaPickerUnified', (config) => ({
             open: false,
             activeTab: config.showLibrary ? 'library' : 'upload',
@@ -111,6 +271,12 @@
                             this.toggleMedia(mediaId);
                         }
                     }
+                });
+
+                // Écouter la confirmation (double-clic ou bouton Insérer)
+                window.addEventListener('media-library-picker-confirm', (e) => {
+                    if (e.detail?.statePath && e.detail.statePath !== this.statePath) return;
+                    this.confirmSelection();
                 });
 
                 // Écouter les événements d'upload

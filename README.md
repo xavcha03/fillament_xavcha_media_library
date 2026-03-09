@@ -10,6 +10,7 @@ Package Laravel / Filament complet pour gérer vos médias (images, vidéos, doc
 - **Composant Filament `MediaPickerUnified`** (upload + bibliothèque unifiée)
 - **Architecture sans duplication** : un fichier physique peut être lié à plusieurs modèles
 - **Support dossiers** (organisation hiérarchique), actions configurables, vue grille & liste
+- **UX de sélection moderne** : clic, Ctrl/Cmd, Shift (plage), double-clic, drag-select rectangulaire, toolbar contextuelle
 
 ## ✅ Compatibilité
 
@@ -143,6 +144,7 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 - 🎨 **Interface moderne** : Miniatures compactes, design soigné, responsive
 - ⚡ **Actions configurables** : Système d'actions Filament modulaires (renommer, déplacer, télécharger, etc.)
 - 🎯 **Actions en masse** : Opérations groupées sur plusieurs fichiers
+- 🖱️ **UX de sélection moderne** : Clic, Ctrl/Cmd, Shift (plage), double-clic, drag-select rectangulaire, toolbar contextuelle
 
 ## 📋 Table des matières
 
@@ -762,6 +764,16 @@ class EditArticle extends EditRecord
 - **Suppression Persistante** : La suppression avec la croix rouge est automatiquement sauvegardée
 - **Filtrage par Collection** : Les médias sont automatiquement filtrés par la collection spécifiée
 - **Pas de Duplication** : Les fichiers existants sont réutilisés, pas dupliqués physiquement
+
+##### UX de sélection (bibliothèque et picker)
+
+- **Clic** : Sélectionne/désélectionne un média
+- **Ctrl/Cmd + clic** : Ajoute ou retire de la sélection
+- **Shift + clic** : Sélectionne une plage entre le dernier cliqué et celui-ci
+- **Double-clic** : Bibliothèque → ouvre les détails ; Picker → valide et insère la sélection
+- **Drag-select** : Sélection rectangulaire en glissant la souris sur la grille (Ctrl/Cmd pour ajouter)
+- **Toolbar contextuelle** : Compteur « X médias sélectionnés », actions groupées (suppression), « Tout sélectionner », « Sélectionner tout dans la page », « Annuler »
+- **Picker** : Barre en bas avec compteur, boutons « Annuler » et « Insérer »
 
 ### Services
 

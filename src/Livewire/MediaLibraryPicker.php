@@ -20,7 +20,10 @@ class MediaLibraryPicker extends Component
     public bool $pickerMode = true;
     public bool $multiple = false;
     public array $acceptedTypes = [];
+    /** @var array<int> IDs des médias sélectionnés */
     public array $selectedIds = [];
+    /** @var int|null Dernier média sélectionné pour Shift+clic */
+    public ?int $lastSelectedId = null;
     public bool $uploadMode = false;
     public ?string $filterCollection = null;
     public ?string $defaultCollection = null; // Collection par défaut pour l'association (pas pour le filtre)
@@ -63,37 +66,134 @@ class MediaLibraryPicker extends Component
         $this->statePath = $statePath; // StatePath unique pour isoler les instances
     }
 
+    /**
+     * Sélection simple (clic) - utilisé par le picker.
+     */
     public function selectMedia(string $mediaUuid): void
     {
-        // Trouver le MediaFile par UUID
         $mediaFile = MediaFile::where('uuid', $mediaUuid)->first();
         if (!$mediaFile) {
             return;
         }
-        
-        // Toggle la sélection
-        if ($this->multiple) {
-            $index = array_search($mediaFile->id, $this->selectedIds);
-            if ($index !== false) {
-                unset($this->selectedIds[$index]);
-                $this->selectedIds = array_values($this->selectedIds);
+        $this->toggleSelect($mediaFile->id, null);
+        $this->dispatchSelectionEvent($mediaFile);
+    }
+
+    /**
+     * Toggle sélection avec modificateurs (Ctrl/Cmd, Shift).
+     */
+    public function toggleSelect(int $mediaId, ?string $modifier = null): void
+    {
+        $mediaId = (int) $mediaId;
+        if ($modifier === 'shift' && $this->lastSelectedId !== null) {
+            $this->rangeSelect($mediaId);
+            $mediaFile = MediaFile::find($mediaId);
+            if ($mediaFile) {
+                $this->dispatchSelectionEvent($mediaFile);
+            }
+            return;
+        }
+        if ($modifier === 'ctrl' || $modifier === 'meta') {
+            $idx = array_search($mediaId, $this->selectedIds);
+            if ($idx !== false) {
+                $this->selectedIds = array_values(array_diff($this->selectedIds, [$mediaId]));
             } else {
-                $this->selectedIds[] = $mediaFile->id;
+                if (!$this->multiple && !empty($this->selectedIds)) {
+                    $this->selectedIds = [$mediaId];
+                } else {
+                    $this->selectedIds[] = $mediaId;
+                }
             }
         } else {
-            $this->selectedIds = [$mediaFile->id];
+            if ($this->multiple) {
+                $idx = array_search($mediaId, $this->selectedIds);
+                if ($idx !== false) {
+                    $this->selectedIds = array_values(array_diff($this->selectedIds, [$mediaId]));
+                } else {
+                    $this->selectedIds[] = $mediaId;
+                }
+            } else {
+                $this->selectedIds = [$mediaId];
+            }
         }
-        
-        // Dispatch event pour le composant parent avec les deux identifiants
-        // Les événements Livewire sont dispatchés globalement par défaut
-        // Inclure statePath pour isoler les instances
-        $this->dispatch('media-library-picker-select', 
-            mediaId: $mediaFile->id, 
+        $this->lastSelectedId = $mediaId;
+        $mediaFile = MediaFile::find($mediaId);
+        if ($mediaFile) {
+            $this->dispatchSelectionEvent($mediaFile);
+        }
+    }
+
+    public function rangeSelect(int $mediaId): void
+    {
+        $mediaId = (int) $mediaId;
+        $idsOnPage = $this->media->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $lastIdx = array_search($this->lastSelectedId, $idsOnPage);
+        $currIdx = array_search($mediaId, $idsOnPage);
+        if ($lastIdx === false || $currIdx === false) {
+            $this->toggleSelect($mediaId, null);
+            return;
+        }
+        $start = min($lastIdx, $currIdx);
+        $end = max($lastIdx, $currIdx);
+        $range = array_slice($idsOnPage, $start, $end - $start + 1);
+        $this->selectedIds = array_values(array_unique(array_merge($this->selectedIds, $range)));
+        $this->lastSelectedId = $mediaId;
+    }
+
+    public function clearSelection(): void
+    {
+        $this->selectedIds = [];
+        $this->lastSelectedId = null;
+    }
+
+    public function selectAllInPage(): void
+    {
+        $this->selectedIds = $this->media->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        if (!empty($this->selectedIds)) {
+            $this->lastSelectedId = end($this->selectedIds);
+        }
+    }
+
+    public function applyDragSelection(array $mediaIds, string $mode = 'replace'): void
+    {
+        $mediaIds = array_map('intval', array_filter($mediaIds));
+        if ($mode === 'replace') {
+            $this->selectedIds = array_values(array_unique($mediaIds));
+        } elseif ($mode === 'add') {
+            $this->selectedIds = array_values(array_unique(array_merge($this->selectedIds, $mediaIds)));
+        } else {
+            foreach ($mediaIds as $id) {
+                $idx = array_search($id, $this->selectedIds);
+                if ($idx !== false) {
+                    unset($this->selectedIds[$idx]);
+                } else {
+                    $this->selectedIds[] = $id;
+                }
+            }
+            $this->selectedIds = array_values($this->selectedIds);
+        }
+        if (!empty($mediaIds)) {
+            $this->lastSelectedId = end($mediaIds);
+        }
+    }
+
+    protected function dispatchSelectionEvent(MediaFile $mediaFile): void
+    {
+        $this->dispatch('media-library-picker-select',
+            mediaId: $mediaFile->id,
             mediaUuid: $mediaFile->uuid,
             mediaFileName: $mediaFile->file_name,
             mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid]),
             statePath: $this->statePath
         );
+    }
+
+    /**
+     * Valider la sélection et fermer le picker (double-clic ou bouton Insérer).
+     */
+    public function confirmSelection(): void
+    {
+        $this->dispatch('media-library-picker-confirm', statePath: $this->statePath);
     }
 
     public function uploadFiles(): void

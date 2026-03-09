@@ -296,26 +296,32 @@
                             </div>
                         </div>
 
-                        {{-- Footer Actions --}}
-                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-                            <x-filament::button
-                                type="button"
-                                x-on:click="open = false"
-                                size="sm"
-                                color="gray"
-                                outlined
-                            >
-                                Annuler
-                            </x-filament::button>
-                            <x-filament::button
-                                type="button"
-                                x-on:click="confirmSelection()"
-                                x-bind:disabled="hasPendingUploads"
-                                size="sm"
-                                color="primary"
-                            >
-                                Valider
-                            </x-filament::button>
+                        {{-- Footer Actions - Toolbar contextuelle picker --}}
+                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300" x-show="selected.length > 0">
+                                <span x-text="selected.length"></span>
+                                <span x-text="selected.length === 1 ? ' média sélectionné' : ' médias sélectionnés'"></span>
+                            </span>
+                            <div class="flex gap-2 ml-auto">
+                                <x-filament::button
+                                    type="button"
+                                    x-on:click="open = false"
+                                    size="sm"
+                                    color="gray"
+                                    outlined
+                                >
+                                    Annuler
+                                </x-filament::button>
+                                <x-filament::button
+                                    type="button"
+                                    x-on:click="confirmSelection()"
+                                    x-bind:disabled="hasPendingUploads || (selected.length < minFiles)"
+                                    size="sm"
+                                    color="primary"
+                                >
+                                    Insérer
+                                </x-filament::button>
+                            </div>
                         </div>
                     </div>
                 </div>

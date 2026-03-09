@@ -23,8 +23,10 @@ class MediaLibrary extends Component
     public array $filters = [];
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
-    public array $selectedItems = [];
-    public bool $selectMode = false;
+    /** @var array<int> IDs des médias sélectionnés (sélection directe, pas de mode) */
+    public array $selectedMediaIds = [];
+    /** @var int|null Dernier média sélectionné pour Shift+clic (plage) */
+    public ?int $lastSelectedId = null;
     public bool $pickerMode = false;
     public bool $multiple = false;
     public array $acceptedTypes = [];
@@ -117,34 +119,110 @@ class MediaLibrary extends Component
         $this->resetPage();
     }
 
-    public function toggleSelectMode(): void
+    /**
+     * Toggle sélection : clic simple ou Ctrl/Cmd + clic.
+     * @param int $mediaId
+     * @param string|null $modifier 'ctrl'|'shift'|null
+     */
+    public function toggleSelect(int $mediaId, ?string $modifier = null): void
     {
-        $this->selectMode = !$this->selectMode;
-        $this->selectedItems = [];
+        $mediaId = (int) $mediaId;
+        if ($modifier === 'shift' && $this->lastSelectedId !== null) {
+            $this->rangeSelect($mediaId);
+            return;
+        }
+        if ($modifier === 'ctrl' || $modifier === 'meta') {
+            $idx = array_search($mediaId, $this->selectedMediaIds);
+            if ($idx !== false) {
+                $this->selectedMediaIds = array_values(array_diff($this->selectedMediaIds, [$mediaId]));
+            } else {
+                $this->selectedMediaIds[] = $mediaId;
+            }
+        } else {
+            if (in_array($mediaId, $this->selectedMediaIds)) {
+                $this->selectedMediaIds = array_values(array_diff($this->selectedMediaIds, [$mediaId]));
+            } else {
+                $this->selectedMediaIds = [$mediaId];
+            }
+        }
+        $this->lastSelectedId = $mediaId;
     }
 
-    public function toggleSelection(string $mediaUuid): void
+    /**
+     * Sélection par plage (Shift + clic).
+     */
+    public function rangeSelect(int $mediaId): void
     {
-        if (in_array($mediaUuid, $this->selectedItems)) {
-            $this->selectedItems = array_values(array_diff($this->selectedItems, [$mediaUuid]));
-        } else {
-            $this->selectedItems[] = $mediaUuid;
+        $mediaId = (int) $mediaId;
+        $idsOnPage = $this->media->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $lastIdx = array_search($this->lastSelectedId, $idsOnPage);
+        $currIdx = array_search($mediaId, $idsOnPage);
+        if ($lastIdx === false || $currIdx === false) {
+            $this->toggleSelect($mediaId, null);
+            return;
+        }
+        $start = min($lastIdx, $currIdx);
+        $end = max($lastIdx, $currIdx);
+        $range = array_slice($idsOnPage, $start, $end - $start + 1);
+        $this->selectedMediaIds = array_values(array_unique(array_merge($this->selectedMediaIds, $range)));
+        $this->lastSelectedId = $mediaId;
+    }
+
+    public function clearSelection(): void
+    {
+        $this->selectedMediaIds = [];
+        $this->lastSelectedId = null;
+    }
+
+    /** Sélectionner tous les médias de la page courante. */
+    public function selectAllInPage(): void
+    {
+        $this->selectedMediaIds = $this->media->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        if (!empty($this->selectedMediaIds)) {
+            $this->lastSelectedId = end($this->selectedMediaIds);
         }
     }
 
+    /** Sélectionner tous les médias (tous les résultats de la requête). */
     public function selectAll(): void
     {
-        $this->selectedItems = $this->getMediaQuery()->pluck('uuid')->toArray();
+        $this->selectedMediaIds = $this->getMediaQuery()->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        if (!empty($this->selectedMediaIds)) {
+            $this->lastSelectedId = end($this->selectedMediaIds);
+        }
     }
 
-    public function deselectAll(): void
+    /**
+     * Appliquer la sélection par drag (rectangle).
+     * @param array<int> $mediaIds
+     * @param string $mode 'replace'|'add'|'toggle'
+     */
+    public function applyDragSelection(array $mediaIds, string $mode = 'replace'): void
     {
-        $this->selectedItems = [];
+        $mediaIds = array_map('intval', array_filter($mediaIds));
+        if ($mode === 'replace') {
+            $this->selectedMediaIds = array_values(array_unique($mediaIds));
+        } elseif ($mode === 'add') {
+            $this->selectedMediaIds = array_values(array_unique(array_merge($this->selectedMediaIds, $mediaIds)));
+        } else {
+            foreach ($mediaIds as $id) {
+                $idx = array_search($id, $this->selectedMediaIds);
+                if ($idx !== false) {
+                    unset($this->selectedMediaIds[$idx]);
+                } else {
+                    $this->selectedMediaIds[] = $id;
+                }
+            }
+            $this->selectedMediaIds = array_values($this->selectedMediaIds);
+        }
+        if (!empty($mediaIds)) {
+            $this->lastSelectedId = end($mediaIds);
+        }
     }
 
     public function bulkDelete(): void
     {
-        if (empty($this->selectedItems)) {
+        if (empty($this->selectedMediaIds)) {
             $this->dispatch('notify', [
                 'type' => 'warning',
                 'message' => 'Aucun élément sélectionné',
@@ -152,16 +230,14 @@ class MediaLibrary extends Component
             return;
         }
 
-        $count = count($this->selectedItems);
-        
-        // Supprimer les MediaFile par UUID (cela supprimera aussi les attachments et conversions)
-        MediaFile::whereIn('uuid', $this->selectedItems)->each(function ($mediaFile) {
-            $mediaFile->delete(); // Utilise la méthode delete() du modèle qui supprime aussi le fichier
+        $count = count($this->selectedMediaIds);
+
+        MediaFile::whereIn('id', $this->selectedMediaIds)->each(function ($mediaFile) {
+            $mediaFile->delete();
         });
-        
-        $this->selectedItems = [];
-        $this->selectMode = false;
-        
+
+        $this->clearSelection();
+
         session()->flash('notify', [
             'type' => 'success',
             'message' => $count . ' média(s) supprimé(s)',
@@ -170,7 +246,7 @@ class MediaLibrary extends Component
 
     public function bulkMoveCollection(string $collection): void
     {
-        if (empty($this->selectedItems)) {
+        if (empty($this->selectedMediaIds)) {
             session()->flash('notify', [
                 'type' => 'warning',
                 'message' => 'Aucun élément sélectionné',
@@ -178,16 +254,11 @@ class MediaLibrary extends Component
             return;
         }
 
-        // Récupérer les IDs des MediaFile à partir des UUIDs
-        $mediaFileIds = MediaFile::whereIn('uuid', $this->selectedItems)->pluck('id')->toArray();
-        
-        // Mettre à jour les attachments pour changer la collection
-        \Xavier\MediaLibraryPro\Models\MediaAttachment::whereIn('media_file_id', $mediaFileIds)
+        \Xavier\MediaLibraryPro\Models\MediaAttachment::whereIn('media_file_id', $this->selectedMediaIds)
             ->update(['collection_name' => $collection]);
-        
-        $this->selectedItems = [];
-        $this->selectMode = false;
-        
+
+        $this->clearSelection();
+
         session()->flash('notify', [
             'type' => 'success',
             'message' => 'Médias déplacés vers la collection ' . $collection,
@@ -196,7 +267,7 @@ class MediaLibrary extends Component
 
     public function bulkAddTags(array $tags): void
     {
-        if (empty($this->selectedItems)) {
+        if (empty($this->selectedMediaIds)) {
             session()->flash('notify', [
                 'type' => 'warning',
                 'message' => 'Aucun élément sélectionné',
@@ -223,9 +294,8 @@ class MediaLibrary extends Component
         // Fonctionnalité future : système de tags pour organiser les médias
         // Cette fonctionnalité sera disponible dans une prochaine version
         
-        $this->selectedItems = [];
-        $this->selectMode = false;
-        
+        $this->clearSelection();
+
         session()->flash('notify', [
             'type' => 'info',
             'message' => 'La fonctionnalité de tags sera disponible dans une prochaine version',
@@ -303,7 +373,16 @@ class MediaLibrary extends Component
         }
 
         // Tri
-        $query->orderBy($this->sortBy, $this->sortDirection);
+        if ($this->sortBy === 'collection_name') {
+            $sub = \Xavier\MediaLibraryPro\Models\MediaAttachment::select('collection_name')
+                ->whereColumn('media_file_id', 'media_files.id')
+                ->limit(1);
+            $query->orderBy($sub, $this->sortDirection);
+        } elseif ($this->sortBy === 'name') {
+            $query->orderBy('file_name', $this->sortDirection);
+        } else {
+            $query->orderBy($this->sortBy, $this->sortDirection);
+        }
 
         return $query;
     }
