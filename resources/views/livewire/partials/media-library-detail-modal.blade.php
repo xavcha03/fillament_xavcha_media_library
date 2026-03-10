@@ -211,120 +211,6 @@
 
                         {{-- Colonne droite : panneau latéral scrollable (≈ 1/4) --}}
                         <aside class="mlp-detail-aside mt-4 flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1 md:mt-0">
-                            {{-- Métadonnées --}}
-                            <x-filament::section>
-                                <x-slot name="heading">
-                                    Métadonnées
-                                </x-slot>
-
-                                <div class="fi-section-content-ctn space-y-4">
-                                    <div>
-                                        <label class="fi-input-label mb-2 block text-sm font-medium leading-6 text-gray-950 dark:text-white">
-                                            Texte alternatif (Alt)
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            wire:model="detailAltText"
-                                            placeholder="Décrivez l'image pour l'accessibilité"
-                                            class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
-                                        />
-
-                                        <p class="fi-hint mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                            Améliore l'accessibilité et le SEO
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label class="fi-input-label mb-2 block text-sm font-medium leading-6 text-gray-950 dark:text-white">
-                                            Description
-                                        </label>
-
-                                        <textarea
-                                            wire:model="detailDescription"
-                                            rows="4"
-                                            placeholder="Description optionnelle du média"
-                                            class="fi-input w-full resize-none rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
-                                        ></textarea>
-                                    </div>
-                                </div>
-                            </x-filament::section>
-
-                            {{-- Informations détaillées --}}
-                            <x-filament::section>
-                                <x-slot name="heading">
-                                    Informations détaillées
-                                </x-slot>
-
-                                <div class="fi-section-content-ctn">
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                                Taille
-                                            </p>
-                                            <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                                                {{ $detailMedia->getFormattedSize() }}
-                                            </p>
-                                        </div>
-
-                                        @if ($detailMedia->isImage() && $detailMedia->width && $detailMedia->height)
-                                            <div>
-                                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                                    Dimensions
-                                                </p>
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                                                    {{ $detailMedia->width }} × {{ $detailMedia->height }} px
-                                                </p>
-                                            </div>
-                                        @endif
-
-                                        <div>
-                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                                Type MIME
-                                            </p>
-                                            <p class="break-all text-sm font-semibold text-gray-900 dark:text-white">
-                                                {{ $detailMedia->mime_type }}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                                Date de création
-                                            </p>
-                                            <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                                                {{ $detailMedia->created_at->format('d/m/Y H:i') }}
-                                            </p>
-                                        </div>
-
-                                        @if ($detailMedia->folder)
-                                            <div class="mlp-detail-fullrow">
-                                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                                    Dossier
-                                                </p>
-                                                <p class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                                                    <x-heroicon-o-folder class="h-4 w-4" />
-                                                    {{ $detailMedia->folder->name }}
-                                                </p>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    @if (is_array($detailMedia->metadata ?? null) && isset($detailMedia->metadata['orientation']))
-                                        <div class="mt-4 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
-                                            <p class="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                                                Infos techniques
-                                            </p>
-                                            <p class="text-xs text-gray-600 dark:text-gray-300">
-                                                Orientation EXIF d’origine :
-                                                <span class="font-semibold">
-                                                    {{ $detailMedia->metadata['orientation'] }}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    @endif
-                                </div>
-                            </x-filament::section>
-
                             {{-- Actions (gestion + image) --}}
                             <x-filament::section>
                                 <x-slot name="heading">
@@ -499,6 +385,121 @@
                                     @endif
                                 </div>
                             </x-filament::section>
+
+                            {{-- Métadonnées --}}
+                            <x-filament::section>
+                                <x-slot name="heading">
+                                    Métadonnées
+                                </x-slot>
+
+                                <div class="fi-section-content-ctn space-y-4">
+                                    <div>
+                                        <label class="fi-input-label mb-2 block text-sm font-medium leading-6 text-gray-950 dark:text-white">
+                                            Texte alternatif (Alt)
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            wire:model="detailAltText"
+                                            placeholder="Décrivez l'image pour l'accessibilité"
+                                            class="fi-input w-full rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
+                                        />
+
+                                        <p class="fi-hint mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            Améliore l'accessibilité et le SEO
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label class="fi-input-label mb-2 block text-sm font-medium leading-6 text-gray-950 dark:text-white">
+                                            Description
+                                        </label>
+
+                                        <textarea
+                                            wire:model="detailDescription"
+                                            rows="4"
+                                            placeholder="Description optionnelle du média"
+                                            class="fi-input w-full resize-none rounded-lg border-none bg-white shadow-sm ring-1 ring-inset transition duration-75 focus:ring-2 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 sm:text-sm sm:leading-6"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </x-filament::section>
+
+                            {{-- Informations détaillées --}}
+                            <x-filament::section>
+                                <x-slot name="heading">
+                                    Informations détaillées
+                                </x-slot>
+
+                                <div class="fi-section-content-ctn">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                Taille
+                                            </p>
+                                            <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                {{ $detailMedia->getFormattedSize() }}
+                                            </p>
+                                        </div>
+
+                                        @if ($detailMedia->isImage() && $detailMedia->width && $detailMedia->height)
+                                            <div>
+                                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                    Dimensions
+                                                </p>
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                    {{ $detailMedia->width }} × {{ $detailMedia->height }} px
+                                                </p>
+                                            </div>
+                                        @endif
+
+                                        <div>
+                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                Type MIME
+                                            </p>
+                                            <p class="break-all text-sm font-semibold text-gray-900 dark:text-white">
+                                                {{ $detailMedia->mime_type }}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                Date de création
+                                            </p>
+                                            <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                {{ $detailMedia->created_at->format('d/m/Y H:i') }}
+                                            </p>
+                                        </div>
+
+                                        @if ($detailMedia->folder)
+                                            <div class="mlp-detail-fullrow">
+                                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                    Dossier
+                                                </p>
+                                                <p class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                                                    <x-heroicon-o-folder class="h-4 w-4" />
+                                                    {{ $detailMedia->folder->name }}
+                                                </p>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    @if (is_array($detailMedia->metadata ?? null) && isset($detailMedia->metadata['orientation']))
+                                        <div class="mt-4 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
+                                            <p class="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                                Infos techniques
+                                            </p>
+                                            <p class="text-xs text-gray-600 dark:text-gray-300">
+                                                Orientation EXIF d’origine :
+                                                <span class="font-semibold">
+                                                    {{ $detailMedia->metadata['orientation'] }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </x-filament::section>
+
                         </aside>
                     </div>
                 </div>

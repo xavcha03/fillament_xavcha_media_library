@@ -117,7 +117,12 @@ class ImageOptimizationService
                 return false;
             }
 
-            $angle = $direction === 'left' ? 90 : -90;
+            // Convention attendue UI:
+            // - "gauche" = rotation anti-horaire
+            // - "droite" = rotation horaire
+            // Intervention et GD n'utilisent pas la même convention de signe,
+            // et la branche GD inverse déjà le signe plus bas (imagerotate(..., -$angle)).
+            $angle = $direction === 'left' ? -90 : 90;
 
             if (class_exists(\Intervention\Image\ImageManager::class)) {
                 $manager = new \Intervention\Image\ImageManager(
