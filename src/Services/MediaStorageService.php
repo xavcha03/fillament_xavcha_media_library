@@ -5,6 +5,7 @@ namespace Xavier\MediaLibraryPro\Services;
 use Xavier\MediaLibraryPro\Models\MediaFile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -104,15 +105,21 @@ class MediaStorageService
             $size = $storage->size($fullPath);
         }
 
-        // Déduplication robuste: checksum sur le fichier final (après optimisation).
+        // Déduplication robuste: checksum sur le fichier final (après optimisation),
+        // uniquement si la colonne "checksum" existe en base (pour ne pas casser
+        // les projets qui n'ont pas encore appliqué la migration).
+        $hasChecksumColumn = Schema::hasColumn('media_files', 'checksum');
         $checksum = null;
-        try {
-            $absolutePath = $storage->path($fullPath);
-            if (is_string($absolutePath) && file_exists($absolutePath)) {
-                $checksum = hash_file('sha256', $absolutePath);
+
+        if ($hasChecksumColumn) {
+            try {
+                $absolutePath = $storage->path($fullPath);
+                if (is_string($absolutePath) && file_exists($absolutePath)) {
+                    $checksum = hash_file('sha256', $absolutePath);
+                }
+            } catch (\Throwable $e) {
+                // Si on ne peut pas calculer le hash, on continue sans déduplication.
             }
-        } catch (\Throwable $e) {
-            // Si on ne peut pas calculer le hash, on continue sans déduplication.
         }
 
         $mediaFile = DB::transaction(function () use (
@@ -126,9 +133,10 @@ class MediaStorageService
             $width,
             $height,
             $checksum,
-            $storage
+            $storage,
+            $hasChecksumColumn
         ) {
-            if ($checksum) {
+            if ($hasChecksumColumn && $checksum) {
                 $existing = MediaFile::query()
                     ->where('disk', $disk)
                     ->where('checksum', $checksum)
@@ -150,17 +158,22 @@ class MediaStorageService
                 }
             }
 
-            return MediaFile::create([
+            $attributes = [
                 'file_name' => $name ?? $originalName,
                 'stored_name' => $storedName,
                 'disk' => $disk,
                 'path' => $fullPath, // Utiliser le chemin retourné par storeAs/put
-                'checksum' => $checksum,
                 'mime_type' => $mimeType,
                 'size' => $size,
                 'width' => $width,
                 'height' => $height,
-            ]);
+            ];
+
+            if ($hasChecksumColumn) {
+                $attributes['checksum'] = $checksum;
+            }
+
+            return MediaFile::create($attributes);
         });
 
         return $mediaFile;
