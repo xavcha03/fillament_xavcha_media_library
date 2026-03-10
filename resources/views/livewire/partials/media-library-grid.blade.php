@@ -1,4 +1,27 @@
 {{-- Media Content - Grid View --}}
+@once
+    <style>
+        /* Miniatures: éviter le crop (object-cover) et garantir un carré stable */
+        .mlp-grid-thumb {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mlp-grid-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* affiche l'image entière */
+            object-position: center;
+            display: block;
+        }
+    </style>
+@endonce
+
 <div
     class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4"
     x-data="mediaGridSelection($wire)"
@@ -24,7 +47,7 @@
                 </div>
             @endif
 
-            <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden pointer-events-none group">
+            <div class="mlp-grid-thumb bg-gray-100 dark:bg-gray-800 pointer-events-none group">
                 @if(str_starts_with($item->mime_type, 'image/'))
                     @php
                         $version = $item->updated_at?->timestamp ?? $item->size ?? time();
@@ -37,7 +60,7 @@
                     <img
                         src="{{ $imageUrl }}"
                         alt="{{ $item->file_name }}"
-                        class="w-full h-full object-cover"
+                        class="mlp-grid-thumb-img"
                         loading="lazy"
                         onerror="console.error('Failed to load image:', this.src); this.style.display='none';"
                     />
