@@ -9,11 +9,58 @@ Cela signifie que :
 - Les classes doivent être **définies manuellement** dans le CSS du package
 - `@apply` de Tailwind **ne fonctionne pas** car Filament compile son propre Tailwind séparément
 
+> **Conséquence pratique (à retenir)** : dans les vues Blade du package, une classe peut apparaître dans le HTML… **sans aucun style appliqué**. Un layout “cassé” n’est pas forcément un bug HTML : c’est très souvent une **utility manquante**.
+
 ## ✅ Solution Recommandée
 
 ### 1. Structure du CSS
 
 Le fichier CSS du package (`resources/css/media-library-pro.css`) doit contenir **toutes les classes Tailwind utilisées** dans les vues du package.
+
+## 🧭 Diagnostic express (symptôme → cause → action)
+
+### 1) “Mes 2 colonnes n’occupent que ~50% de la modale”
+- **Symptôme** : tu as une grille du type `md:grid-cols-4`, et deux blocs censés “span” (ex: `md:col-span-3` / `md:col-span-1`). Visuellement, chaque bloc ressemble à une colonne étroite et il reste du vide.
+- **Cause probable** : les utilities `col-span-*` (ou la variante responsive `md:col-span-*`) **ne sont pas présentes** dans le CSS effectivement chargé.
+  - Dans ce cas, chaque enfant reste sur **1 colonne** par défaut.
+  - Exemple concret : `grid-cols-4` → 4 colonnes ; si les spans manquent : 1/4 + 1/4 = **50%** utilisé, 2 colonnes vides.
+- **Action recommandée (la plus robuste)** : ne pas dépendre des spans Tailwind pour les layouts structurants dans un package.
+  - Utiliser des **classes préfixées** (ex: `mlp-*`) + un **CSS “scopé”** qui définit explicitement la grille (ratio 3/1, 2/1, etc.).
+  - Avantage : tu n’as **pas** à maintenir des dizaines de classes utilitaires juste pour tenir une mise en page.
+
+### 2) “Les styles d’une classe existent dans le HTML mais ne font rien”
+- **Cause probable** : la classe n’est pas compilée / pas incluse dans le CSS Filament chargé.
+- **Action** : soit tu ajoutes la règle dans `resources/css/media-library-pro.css`, soit tu remplaces la dépendance à l’utility par un petit CSS dédié (souvent plus simple pour les layouts).
+
+### 3) “Responsive/dark/hover ne marche pas”
+- **Cause probable** : tu as la classe dans le HTML (`md:*`, `dark:*`, `hover:*`, `focus:*`) mais tu n’as pas la variante correspondante dans ton CSS.
+- **Action** : ajouter la variante explicitement dans le CSS (media queries, sélecteurs `.dark`, pseudo-classes).
+
+## ✅ Pattern recommandé pour éviter de perdre du temps (layouts “structurants”)
+
+### Principe
+- **Dans les vues Blade du package** : garder Tailwind pour le “décor” (espacements, couleurs, typo), mais éviter d’en faire dépendre la **structure** (grilles, spans, ratios) si tu n’es pas sûr que toutes les utilities sont disponibles.
+- **Pour la structure** : utiliser **des classes métier préfixées** + un CSS minimal, lisible, stable.
+
+### Pattern “grille 2 colonnes ratio 3/1”
+- **Quand l’utiliser** : preview + aside, header à gauche / actions à droite, etc.
+- **Pourquoi** : remplace `grid-cols-*` + `col-span-*` (fragiles en contexte package) par une règle unique.
+
+Checklist d’implémentation (sans rentrer dans le code ici) :
+- Créer un wrapper avec une classe du type `mlp-detail-grid`
+- Définir en CSS :
+  - 1 colonne en mobile
+  - 2 colonnes en desktop avec `grid-template-columns: 3fr 1fr`
+- Ajouter `min-width: 0` aux colonnes si tu as du `truncate` / du texte long (sinon ça déborde)
+- Placer ce CSS :
+  - soit dans `resources/css/media-library-pro.css` (recommandé si réutilisé)
+  - soit “scopé” dans la vue avec `@once <style> ... </style> @endonce` (utile pour un fix local rapide, sans polluer le CSS global)
+
+## 🧪 Mini-checklist “avant de chercher 30 minutes”
+- Inspecter l’élément et vérifier : **la classe est bien dans le DOM** ?
+- Si oui, vérifier dans l’onglet “Styles” : **une règle CSS existe** pour cette classe ?
+  - **Aucune règle** → utility manquante → ajouter la règle ou remplacer par CSS préfixé.
+- Si une règle existe mais est barrée : **conflit de spécificité** (Filament peut surcharger). Solution : scope plus précis, classe préfixée, ou réorganiser le DOM.
 
 ### 2. Organisation du CSS
 
