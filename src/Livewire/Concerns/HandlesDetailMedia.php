@@ -2,6 +2,7 @@
 
 namespace Xavier\MediaLibraryPro\Livewire\Concerns;
 
+use Filament\Notifications\Notification;
 use Xavier\MediaLibraryPro\Models\MediaFile;
 use Xavier\MediaLibraryPro\Models\MediaFolder;
 use Xavier\MediaLibraryPro\Services\ImageOptimizationService;
@@ -223,10 +224,11 @@ trait HandlesDetailMedia
             $mediaFile = MediaFile::where('uuid', $mediaUuid)->firstOrFail();
 
             if (! $mediaFile->isImage()) {
-                session()->flash('notify', [
-                    'type' => 'error',
-                    'message' => 'Seules les images peuvent être optimisées',
-                ]);
+                Notification::make()
+                    ->title('Erreur')
+                    ->body('Seules les images peuvent être optimisées')
+                    ->danger()
+                    ->send();
 
                 return;
             }
@@ -244,21 +246,24 @@ trait HandlesDetailMedia
 
                 $this->detailMedia = $mediaFile->fresh();
 
-                session()->flash('notify', [
-                    'type' => 'success',
-                    'message' => "Image optimisée avec succès ! Taille réduite de {$savedSize} ({$savedPercent}%)",
-                ]);
+                Notification::make()
+                    ->title('Succès')
+                    ->body("Image optimisée avec succès ! Taille réduite de {$savedSize} ({$savedPercent}%)")
+                    ->success()
+                    ->send();
             } else {
-                session()->flash('notify', [
-                    'type' => 'error',
-                    'message' => 'Erreur lors de l\'optimisation de l\'image',
-                ]);
+                Notification::make()
+                    ->title('Erreur')
+                    ->body("Erreur lors de l'optimisation de l'image")
+                    ->danger()
+                    ->send();
             }
         } catch (\Exception $e) {
-            session()->flash('notify', [
-                'type' => 'error',
-                'message' => 'Erreur : ' . $e->getMessage(),
-            ]);
+            Notification::make()
+                ->title('Erreur')
+                ->body('Erreur : ' . $e->getMessage())
+                ->danger()
+                ->send();
         }
     }
 
