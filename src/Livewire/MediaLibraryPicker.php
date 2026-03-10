@@ -179,11 +179,12 @@ class MediaLibraryPicker extends Component
 
     protected function dispatchSelectionEvent(MediaFile $mediaFile): void
     {
+        $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
         $this->dispatch('media-library-picker-select',
             mediaId: $mediaFile->id,
             mediaUuid: $mediaFile->uuid,
             mediaFileName: $mediaFile->file_name,
-            mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid]),
+            mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid, 't' => $version]),
             statePath: $this->statePath
         );
     }
@@ -226,7 +227,7 @@ class MediaLibraryPicker extends Component
                     mediaId: $mediaFile->id,
                     mediaUuid: $mediaFile->uuid,
                     mediaFileName: $mediaFile->file_name,
-                    mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid]),
+                    mediaUrl: route('media-library-pro.serve', ['media' => $mediaFile->uuid, 't' => ($mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time())]),
                     statePath: $this->statePath
                 );
                 

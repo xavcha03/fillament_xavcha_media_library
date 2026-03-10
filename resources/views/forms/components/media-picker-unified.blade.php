@@ -132,9 +132,12 @@
                                     <div class="relative w-32 h-32 bg-white dark:bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-all hover:border-primary-400 dark:hover:border-primary-500">
                                         @if($mediaFile->isImage())
                                             @php
+                                                $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
                                                 $imageUrl = $conversion && $mediaFile->getConversionUrl($conversion) 
                                                     ? $mediaFile->getConversionUrl($conversion)
                                                     : route('media-library-pro.serve', ['media' => $mediaFile->uuid]);
+
+                                                $imageUrl .= (str_contains($imageUrl, '?') ? '&' : '?') . 't=' . $version;
                                             @endphp
                                             <img src="{{ $imageUrl }}" alt="{{ $mediaFile->file_name }}" class="w-full h-full object-cover" />
                                         @else

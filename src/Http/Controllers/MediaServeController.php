@@ -90,10 +90,14 @@ class MediaServeController extends Controller
                 abort(404, 'Fichier physique non trouvé: ' . $filePath);
             }
             
+            $cacheControl = $request->has('t')
+                ? 'public, max-age=31536000, immutable'
+                : 'no-cache, no-store, must-revalidate';
+
             return response()->file($filePath, [
                 'Content-Type' => $mediaFile->mime_type,
                 'Content-Disposition' => 'inline; filename="' . $mediaFile->file_name . '"',
-                'Cache-Control' => 'public, max-age=31536000',
+                'Cache-Control' => $cacheControl,
             ]);
         } catch (\Exception $e) {
             if (config('app.debug')) {

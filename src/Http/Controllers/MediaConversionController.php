@@ -75,10 +75,14 @@ class MediaConversionController extends Controller
             default => 'image/jpeg',
         };
         
+        $cacheControl = $request->has('t')
+            ? 'public, max-age=31536000, immutable'
+            : 'no-cache, no-store, must-revalidate';
+
         return response()->file($filePath, [
             'Content-Type' => $mimeType,
             'Content-Disposition' => 'inline; filename="' . $conversionModel->file_name . '"',
-            'Cache-Control' => 'public, max-age=31536000',
+            'Cache-Control' => $cacheControl,
         ]);
     }
 }

@@ -251,13 +251,21 @@ class MediaPickerUnified extends Field
                 return (int) $file->id;
             })
             ->map(function ($file) {
+                $version = $file->updated_at?->timestamp ?? $file->size ?? time();
+
                 return [
                     'id' => (int) $file->id, // S'assurer que c'est un entier
                     'uuid' => $file->uuid,
                     'file_name' => $file->file_name,
-                    'url' => route('media-library-pro.serve', ['media' => $file->uuid]),
+                    'url' => route('media-library-pro.serve', ['media' => $file->uuid, 't' => $version]),
                     'conversions' => $file->conversions->keyBy('conversion_name')->map(function ($conv) {
-                        return route('media-library-pro.conversion', ['media' => $conv->mediaFile->uuid, 'conversion' => $conv->conversion_name]);
+                        $version = $conv->mediaFile->updated_at?->timestamp ?? $conv->mediaFile->size ?? time();
+
+                        return route('media-library-pro.conversion', [
+                            'media' => $conv->mediaFile->uuid,
+                            'conversion' => $conv->conversion_name,
+                            't' => $version,
+                        ]);
                     })->toArray(),
                 ];
             })

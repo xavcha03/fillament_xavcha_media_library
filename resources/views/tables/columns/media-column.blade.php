@@ -19,9 +19,12 @@
         @foreach($mediaItems as $attachment)
             @php
                 $mediaFile = $attachment->mediaFile;
+                $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
                 $url = $conversion && $mediaFile->getConversionUrl($conversion) 
                     ? $mediaFile->getConversionUrl($conversion)
                     : route('media-library-pro.serve', ['media' => $mediaFile->uuid]);
+
+                $url .= (str_contains($url, '?') ? '&' : '?') . 't=' . $version;
             @endphp
             @if($mediaFile->isImage())
                 <img 
