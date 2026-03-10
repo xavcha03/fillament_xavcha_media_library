@@ -48,4 +48,17 @@ return [
         // On ne corrige plus automatiquement l'orientation EXIF : rotation manuelle via l'UI.
         'fix_orientation' => false,
     ],
+
+    /**
+     * Cache HTTP des médias servis par les routes du package.
+     *
+     * En admin (Filament), tu peux vouloir désactiver le cache pour voir immédiatement
+     * les effets (rotation/optimisation) sans hard refresh.
+     */
+    'http_cache' => [
+        // Si false : envoie "no-store" et désactive le cache navigateur/CDN.
+        'enabled' => true,
+        // Max-age utilisé quand enabled=true et qu'une version (t=...) est fournie.
+        'max_age' => 31536000,
+    ],
 ];

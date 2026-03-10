@@ -90,8 +90,13 @@ class MediaServeController extends Controller
                 abort(404, 'Fichier physique non trouvé: ' . $filePath);
             }
             
-            $cacheControl = $request->has('t')
-                ? 'public, max-age=31536000, immutable'
+            $cacheEnabled = (bool) config('media-library-pro.http_cache.enabled', true);
+            $maxAge = (int) config('media-library-pro.http_cache.max_age', 31536000);
+
+            $cacheControl = $cacheEnabled
+                ? ($request->has('t')
+                    ? "public, max-age={$maxAge}, immutable"
+                    : 'no-cache, no-store, must-revalidate')
                 : 'no-cache, no-store, must-revalidate';
 
             return response()->file($filePath, [
