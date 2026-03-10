@@ -27,6 +27,7 @@ class MediaFile extends Model
         'stored_name',
         'disk',
         'path',
+        'checksum',
         'mime_type',
         'size',
         'width',

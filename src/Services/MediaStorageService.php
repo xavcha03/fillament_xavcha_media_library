@@ -5,6 +5,7 @@ namespace Xavier\MediaLibraryPro\Services;
 use Xavier\MediaLibraryPro\Models\MediaFile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MediaStorageService
@@ -103,17 +104,64 @@ class MediaStorageService
             $size = $storage->size($fullPath);
         }
 
-        // Créer le MediaFile
-        $mediaFile = MediaFile::create([
-            'file_name' => $name ?? $originalName,
-            'stored_name' => $storedName,
-            'disk' => $disk,
-            'path' => $fullPath, // Utiliser le chemin retourné par storeAs/put
-            'mime_type' => $mimeType,
-            'size' => $size,
-            'width' => $width,
-            'height' => $height,
-        ]);
+        // Déduplication robuste: checksum sur le fichier final (après optimisation).
+        $checksum = null;
+        try {
+            $absolutePath = $storage->path($fullPath);
+            if (is_string($absolutePath) && file_exists($absolutePath)) {
+                $checksum = hash_file('sha256', $absolutePath);
+            }
+        } catch (\Throwable $e) {
+            // Si on ne peut pas calculer le hash, on continue sans déduplication.
+        }
+
+        $mediaFile = DB::transaction(function () use (
+            $disk,
+            $fullPath,
+            $storedName,
+            $name,
+            $originalName,
+            $mimeType,
+            $size,
+            $width,
+            $height,
+            $checksum,
+            $storage
+        ) {
+            if ($checksum) {
+                $existing = MediaFile::query()
+                    ->where('disk', $disk)
+                    ->where('checksum', $checksum)
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if ($existing) {
+                    // On vient de stocker un doublon: supprimer le fichier physique créé,
+                    // et retourner le MediaFile existant.
+                    try {
+                        if ($storage->exists($fullPath)) {
+                            $storage->delete($fullPath);
+                        }
+                    } catch (\Throwable $e) {
+                        // Ignore
+                    }
+
+                    return $existing;
+                }
+            }
+
+            return MediaFile::create([
+                'file_name' => $name ?? $originalName,
+                'stored_name' => $storedName,
+                'disk' => $disk,
+                'path' => $fullPath, // Utiliser le chemin retourné par storeAs/put
+                'checksum' => $checksum,
+                'mime_type' => $mimeType,
+                'size' => $size,
+                'width' => $width,
+                'height' => $height,
+            ]);
+        });
 
         return $mediaFile;
     }

@@ -361,3 +361,42 @@ ddev artisan view:clear && ddev artisan filament:assets
 
 **Rappel Important** : Filament ne compile PAS automatiquement les classes Tailwind des packages. Toutes les classes utilisées dans les vues doivent être définies manuellement dans le CSS du package.
 
+## 🖼️ Images, rotation et cache dans l’admin
+
+### 1. Rotation manuelle ≠ simple “pivot visuel”
+
+Dans la modale de détail :
+
+- Les actions **« Pivoter à gauche / à droite »** utilisent le service `ImageOptimizationService` pour **réécrire physiquement le fichier** sur le disque (et régénérer les conversions).
+- Ce n’est pas une simple rotation CSS : le fichier original (et ses thumbnails) changent réellement de dimensions / orientation.
+
+### 2. Cache HTTP et paramètre `t` (versionning)
+
+Pour éviter de se battre avec le cache :
+
+- Toutes les URLs générées par le package vers `media-library-pro.serve` / `media-library-pro.conversion` ajoutent un paramètre `t` basé sur :
+  - `updated_at->timestamp` si disponible
+  - sinon `size` puis `time()` en fallback
+- Les contrôleurs appliquent la règle suivante :
+  - **avec `t`** : `Cache-Control: public, max-age=..., immutable`
+  - **sans `t`** : `Cache-Control: no-cache, no-store, must-revalidate`
+
+En pratique : après une rotation ou une optimisation, l’`updated_at` change → **nouvelle URL** → le navigateur recharge l’image corrigée.
+
+### 3. Désactiver complètement le cache dans l’admin Filament
+
+Si tu développes principalement en contexte admin (Filament), tu peux forcer le **no-cache global** pour ce package :
+
+```php
+// config/media-library-pro.php
+
+'http_cache' => [
+    // false = pas de cache navigateur/CDN sur les routes du package
+    'enabled' => false,
+    'max_age' => 31536000, // utile uniquement si enabled = true
+],
+```
+
+- Recommandé pour : **environnements de dev / préprod / back-office uniquement**.
+- Pour un front public, tu peux laisser `enabled = true` et profiter du cache long tout en gardant la sécurité du paramètre `t`.
+

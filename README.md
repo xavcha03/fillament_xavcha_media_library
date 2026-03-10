@@ -72,8 +72,13 @@ MediaPickerUnified::make('image_ids')
 
 ```blade
 @if($article->getFirstMediaFile('images'))
+    @php
+        $attachment = $article->getFirstMediaFile('images');
+        $mediaFile = $attachment->mediaFile;
+        $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
+    @endphp
     <img
-        src="{{ route('media-library-pro.serve', ['media' => $article->getFirstMediaFile('images')->mediaFile->uuid]) }}"
+        src="{{ route('media-library-pro.serve', ['media' => $mediaFile->uuid, 't' => $version]) }}"
         alt="{{ $article->title }}"
     >
 @endif
@@ -350,6 +355,28 @@ Le fichier de configuration se trouve dans `config/media-library-pro.php` :
     'preserve_original' => false,    // Conserver l'original si conversion WebP
     'queue' => false,                // Traitement en queue (asynchrone)
 ],
+
+### Cache HTTP des médias
+
+Par défaut, le package applique un cache HTTP long sur les fichiers servis (utile en front/public), mais **optimisé pour l’admin** :
+
+```php
+'http_cache' => [
+    // Si false : pas de cache navigateur / CDN (admin Filament, préprod, etc.)
+    'enabled' => true,
+
+    // max-age utilisé quand enabled=true ET qu'un paramètre "t" est présent dans l'URL
+    'max_age' => 31536000,
+],
+```
+
+- Les routes `media-library-pro.serve` et `media-library-pro.conversion` :
+  - **si `http_cache.enabled = false`** → envoient `Cache-Control: no-cache, no-store, must-revalidate`
+  - **si `http_cache.enabled = true`** :
+    - avec `?t=...` → `Cache-Control: public, max-age=..., immutable`
+    - sans `t` → `no-cache, no-store, must-revalidate`
+
+> 💡 **En admin Filament**, tu peux désactiver le cache HTTP en mettant `'http_cache' => ['enabled' => false]` dans `config/media-library-pro.php` pour voir immédiatement les effets de rotation/optimisation sans hard refresh.
 ```
 
 **Options d'optimisation :**
@@ -1195,8 +1222,11 @@ public function store(Request $request)
 @if($article->getFirstMediaFile('images'))
     @php
         $attachment = $article->getFirstMediaFile('images');
+        $mediaFile = $attachment->mediaFile;
+        $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
         $imageUrl = route('media-library-pro.serve', [
-            'media' => $attachment->mediaFile->uuid
+            'media' => $mediaFile->uuid,
+            't' => $version,
         ]);
     @endphp
     <img src="{{ $imageUrl }}" 
@@ -1207,8 +1237,13 @@ public function store(Request $request)
 {{-- Afficher une galerie --}}
 <div class="gallery">
     @foreach($article->getMediaFiles('gallery') as $attachment)
+        @php
+            $mediaFile = $attachment->mediaFile;
+            $version = $mediaFile->updated_at?->timestamp ?? $mediaFile->size ?? time();
+        @endphp
         <img src="{{ route('media-library-pro.serve', [
-            'media' => $attachment->mediaFile->uuid
+            'media' => $mediaFile->uuid,
+            't' => $version,
         ]) }}" 
              alt="{{ $attachment->mediaFile->file_name }}"
              loading="lazy">
@@ -1513,6 +1548,29 @@ Si vous modifiez les vues Blade ou ajoutez de nouvelles classes Tailwind, vous d
 - ✅ Définir toutes les classes manuellement dans le CSS
 - ✅ Inclure les variantes dark mode, responsive, hover, focus
 - ✅ Échapper correctement les classes avec caractères spéciaux (`bg-black/70` → `.bg-black\/70`)
+
+## ♻️ Déduplication des uploads (important en prod)
+
+### Pourquoi un “doublon” peut apparaître
+
+En prod (Livewire, latence, retries réseau), il peut arriver qu’un upload soit **soumis deux fois** (double événement, timeout, re-submit). Sans garde-fou côté stockage, cela crée deux lignes `media_files` pointant vers deux fichiers stockés.
+
+### Comment le package gère ça
+
+Le stockage calcule maintenant un **checksum SHA-256** sur le fichier final (après optimisation éventuelle), puis :
+
+- si un `MediaFile` existe déjà avec le même `(disk, checksum)` → le package **réutilise l’existant** et supprime le fichier physique fraîchement stocké.
+- sinon → un nouveau `MediaFile` est créé.
+
+> Résultat : même si l’upload est déclenché 2 fois, tu n’obtiens pas deux médias “identiques”.
+
+### Migration
+
+Après mise à jour du package, exécuter les migrations (le package ajoute `media_files.checksum` + un index unique) :
+
+```bash
+php artisan migrate
+```
 
 ## 🛠️ Développement
 
