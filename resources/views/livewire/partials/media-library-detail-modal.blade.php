@@ -34,6 +34,15 @@
         .mlp-detail-aside {
             min-width: 0;
         }
+
+        .mlp-detail-media-img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 48rem;
+            max-height: 70vh;
+            object-fit: contain;
+        }
     </style>
 @endonce
 
@@ -174,7 +183,7 @@
                                         <img
                                             src="{{ $this->getMediaImageUrl($detailMedia) }}"
                                             alt="{{ $detailMedia->alt_text ?: $detailMedia->file_name }}"
-                                            class="h-auto max-h-[70vh] w-full max-w-3xl rounded-lg object-contain"
+                                            class="mlp-detail-media-img rounded-lg"
                                         />
                                     </div>
                                 @else
