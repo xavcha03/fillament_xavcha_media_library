@@ -1,6 +1,15 @@
 <div class="space-y-4">
     @if($uploadMode)
         {{-- Upload Mode --}}
+        @php
+            // IMPORTANT: cet input est rendu potentiellement plusieurs fois sur la même page (Builder/blocs).
+            // Un id fixe provoquerait des collisions DOM (label/drag&drop ciblent la mauvaise instance).
+            $livewireComponentId = method_exists($this, 'getId')
+                ? $this->getId()
+                : ($this->id ?? spl_object_hash($this));
+
+            $uploadInputId = 'file-upload-picker-' . md5(($statePath ?? '') . '|' . $livewireComponentId);
+        @endphp
         <div 
             x-data="{ 
                 isDragging: false,
@@ -15,7 +24,7 @@
                     e.preventDefault();
                     this.isDragging = false;
                     const files = Array.from(e.dataTransfer.files);
-                    const input = document.getElementById('file-upload-picker');
+                    const input = this.$refs.fileInput;
                     if (input) {
                         const dataTransfer = new DataTransfer();
                         files.forEach(file => dataTransfer.items.add(file));
@@ -29,7 +38,7 @@
                 {{-- Colonne gauche : Zone de drag & drop --}}
                 <div class="space-y-4">
                     <label
-                        for="file-upload-picker"
+                        for="{{ $uploadInputId }}"
                         @dragover.prevent="handleDragOver($event)"
                         @dragleave.prevent="handleDragLeave($event)"
                         @drop.prevent="handleDrop($event)"
@@ -37,10 +46,11 @@
                         class="relative block border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer hover:border-primary-400 hover:bg-gradient-to-br hover:from-primary-50 hover:to-white dark:hover:from-primary-900/10 dark:hover:to-gray-800 hover:shadow-lg group h-full min-h-[400px] flex items-center justify-center"
                     >
                         <input
-                            id="file-upload-picker"
+                            id="{{ $uploadInputId }}"
                             type="file"
                             wire:model="uploadedFiles"
                             multiple
+                            x-ref="fileInput"
                             class="sr-only"
                             tabindex="-1"
                             accept="{{ implode(',', $acceptedTypes) }}"

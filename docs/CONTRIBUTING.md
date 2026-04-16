@@ -70,7 +70,7 @@ En participant à ce projet, vous acceptez de respecter notre code de conduite. 
 
 6. **Vérifiez que les tests passent** :
    ```bash
-   php artisan test
+   ddev artisan test
    ```
 
 7. **Commitez vos changements** :
@@ -188,13 +188,13 @@ class MediaStorageServiceTest extends TestCase
 
 ```bash
 # Tous les tests
-php artisan test
+ddev artisan test
 
 # Tests spécifiques
-php artisan test --filter MediaStorageServiceTest
+ddev artisan test --filter MediaStorageServiceTest
 
 # Avec couverture de code
-php artisan test --coverage
+ddev artisan test --coverage
 ```
 
 ## 📚 Documentation

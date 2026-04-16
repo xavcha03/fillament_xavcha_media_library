@@ -25,7 +25,7 @@ Ce guide explique comment installer et utiliser le package `xavcha/fillament-xav
 #### 2. Installer le package
 
 ```bash
-composer require xavcha/fillament-xavcha-media-library
+ddev composer require xavcha/fillament-xavcha-media-library
 ```
 
 ### Option 2 : Path Repository (Développement local)
@@ -51,13 +51,13 @@ Si vous développez le package localement :
 
 Puis :
 ```bash
-composer update xavcha/fillament-xavcha-media-library
+ddev composer update xavcha/fillament-xavcha-media-library
 ```
 
 ### Option 3 : Packagist (si vous publiez publiquement)
 
 ```bash
-composer require xavcha/fillament-xavcha-media-library
+ddev composer require xavcha/fillament-xavcha-media-library
 ```
 
 ## ⚙️ Configuration
@@ -65,8 +65,8 @@ composer require xavcha/fillament-xavcha-media-library
 ### 1. Publier les migrations
 
 ```bash
-php artisan vendor:publish --tag=media-library-pro-migrations
-php artisan migrate
+ddev artisan vendor:publish --tag=media-library-pro-migrations
+ddev artisan migrate
 ```
 
 **Note** : Les migrations créent les tables suivantes :
@@ -78,13 +78,13 @@ php artisan migrate
 ### 2. Publier la configuration (optionnel)
 
 ```bash
-php artisan vendor:publish --tag=media-library-pro-config
+ddev artisan vendor:publish --tag=media-library-pro-config
 ```
 
 ### 3. Créer le lien symbolique du storage
 
 ```bash
-php artisan storage:link
+ddev artisan storage:link
 ```
 
 ## 🚀 Utilisation
@@ -132,7 +132,7 @@ MediaPickerUnified::make('image_ids')
 ### Mise à jour du package
 
 ```bash
-composer update xavcha/fillament-xavcha-media-library
+ddev composer update xavcha/fillament-xavcha-media-library
 ```
 
 ## 📝 Notes importantes

@@ -35,10 +35,10 @@ Dans votre projet qui utilise le package :
 
 ```bash
 # Mettre à jour vers la version exacte
-composer require xavcha/fillament-xavcha-media-library:^1.1.0
+ddev composer require xavcha/fillament-xavcha-media-library:^1.1.0
 
 # Ou mettre à jour vers la dernière version compatible
-composer update xavcha/fillament-xavcha-media-library
+ddev composer update xavcha/fillament-xavcha-media-library
 ```
 
 #### Option B : Utiliser une contrainte de version flexible
@@ -55,7 +55,7 @@ Dans votre `composer.json`, utilisez une contrainte qui accepte les mises à jou
 
 Puis :
 ```bash
-composer update xavcha/fillament-xavcha-media-library
+ddev composer update xavcha/fillament-xavcha-media-library
 ```
 
 #### Option C : Toujours utiliser la dernière version (développement)
@@ -73,7 +73,7 @@ composer update xavcha/fillament-xavcha-media-library
 ## 🔍 Vérifier la version installée
 
 ```bash
-composer show xavcha/fillament-xavcha-media-library
+ddev composer show xavcha/fillament-xavcha-media-library
 ```
 
 ## 🚨 Problèmes courants
@@ -87,7 +87,7 @@ composer show xavcha/fillament-xavcha-media-library
 
 2. **Vider le cache Composer** :
    ```bash
-   composer clear-cache
+   ddev composer clear-cache
    ```
 
 3. **Vérifier la contrainte de version** dans votre `composer.json` :
@@ -97,7 +97,7 @@ composer show xavcha/fillament-xavcha-media-library
 
 4. **Forcer la mise à jour** :
    ```bash
-   composer update xavcha/fillament-xavcha-media-library --with-dependencies
+   ddev composer update xavcha/fillament-xavcha-media-library --with-dependencies
    ```
 
 ### Le tag n'apparaît pas sur GitHub
@@ -113,7 +113,7 @@ git push origin v1.1.0
 2. **Versioning** : Mettre à jour `composer.json` et `CHANGELOG.md`
 3. **Tag** : Créer un tag Git avec `git tag -a vX.Y.Z`
 4. **Push** : Pousser le code et le tag
-5. **Mise à jour** : Dans vos projets, faire `composer update`
+5. **Mise à jour** : Dans vos projets, faire `ddev composer update`
 
 ## 🔄 Exemple complet
 
@@ -132,5 +132,5 @@ git push origin main
 git push origin v1.2.0
 
 # Dans votre projet
-composer update xavcha/fillament-xavcha-media-library
+ddev composer update xavcha/fillament-xavcha-media-library
 ```

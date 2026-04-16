@@ -22,11 +22,11 @@ Package Laravel / Filament complet pour gérer vos médias (images, vidéos, doc
 ## 🚀 Installation rapide
 
 ```bash
-composer require xavcha/fillament-xavcha-media-library
-php artisan vendor:publish --tag=media-library-pro-migrations
-php artisan migrate
-php artisan vendor:publish --tag=media-library-pro-config
-php artisan storage:link
+ddev composer require xavcha/fillament-xavcha-media-library
+ddev artisan vendor:publish --tag=media-library-pro-migrations
+ddev artisan migrate
+ddev artisan vendor:publish --tag=media-library-pro-config
+ddev artisan storage:link
 ```
 
 Plus de détails dans `docs/INSTALLATION.md`.
@@ -189,14 +189,14 @@ Un package Laravel/Filament complet et moderne pour gérer les médias (images, 
 ### Installation via Composer
 
 ```bash
-composer require xavcha/fillament-xavcha-media-library
+ddev composer require xavcha/fillament-xavcha-media-library
 ```
 
 ### 1. Publier les migrations
 
 ```bash
-php artisan vendor:publish --tag=media-library-pro-migrations
-php artisan migrate
+ddev artisan vendor:publish --tag=media-library-pro-migrations
+ddev artisan migrate
 ```
 
 Cela créera les tables suivantes :
@@ -208,13 +208,13 @@ Cela créera les tables suivantes :
 ### 2. Publier la configuration (optionnel)
 
 ```bash
-php artisan vendor:publish --tag=media-library-pro-config
+ddev artisan vendor:publish --tag=media-library-pro-config
 ```
 
 ### 3. Créer le lien symbolique du storage
 
 ```bash
-php artisan storage:link
+ddev artisan storage:link
 ```
 
 ### 4. Installer les dépendances pour les conversions (optionnel)
@@ -222,7 +222,7 @@ php artisan storage:link
 Si vous souhaitez utiliser Intervention Image pour les conversions :
 
 ```bash
-composer require intervention/image
+ddev composer require intervention/image
 ```
 
 ### 5. Installer les outils d'optimisation d'images (recommandé)
@@ -406,23 +406,23 @@ Pour optimiser les images déjà uploadées avant l'activation de l'optimisation
 Optimisez toutes les images existantes en une seule commande :
 
 ```bash
-php artisan media-library-pro:optimize-images
+ddev artisan media-library-pro:optimize-images
 ```
 
 **Options disponibles :**
 
 ```bash
 # Optimiser toutes les images
-php artisan media-library-pro:optimize-images
+ddev artisan media-library-pro:optimize-images
 
 # Limiter le nombre d'images à traiter
-php artisan media-library-pro:optimize-images --limit=50
+ddev artisan media-library-pro:optimize-images --limit=50
 
 # Forcer l'optimisation même si déjà optimisée
-php artisan media-library-pro:optimize-images --force
+ddev artisan media-library-pro:optimize-images --force
 
 # Traiter par batch de 200 images (par défaut: 100)
-php artisan media-library-pro:optimize-images --chunk=200
+ddev artisan media-library-pro:optimize-images --chunk=200
 ```
 
 La commande affichera :
