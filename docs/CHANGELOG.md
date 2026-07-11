@@ -5,7 +5,11 @@ Tous les changements notables de ce package seront documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [1.2.0] - 2025-03-09
+## [1.2.0] - 2026-07-11
+
+### Corrigé
+- **`MediaLibraryPicker`** : ajout de `toggleSelect()` et méthodes associées, alignées avec les vues Blade/Alpine (corrige l'erreur Livewire « toggleSelect not found » en v1.1.0)
+- **`selectMedia()`** délègue désormais uniquement à `toggleSelect()` sans double dispatch d'événement
 
 ### ✨ Ajouté - Refonte UX de la sélection
 

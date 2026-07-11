@@ -75,8 +75,8 @@ class MediaLibraryPicker extends Component
         if (!$mediaFile) {
             return;
         }
+
         $this->toggleSelect($mediaFile->id, null);
-        $this->dispatchSelectionEvent($mediaFile);
     }
 
     /**
